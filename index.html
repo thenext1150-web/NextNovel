@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>เรื่องเล่ายามค่ำ — แพลตฟอร์มนิยาย</title>
+<title>คลังนิยาย</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@400;500;600;700&family=Kanit:wght@300;400;500;600&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -11,6 +11,7 @@
 /* ====================== TOKENS ====================== */
 :root{
   --night:#15101d;
+  --night-rgb:21,16,29;
   --night-2:#1d1628;
   --night-3:#281d36;
   --paper:#f6efe1;
@@ -45,6 +46,7 @@
 }
 body.theme-light{
   --night:#fbf6ec;
+  --night-rgb:251,246,236;
   --night-2:#ffffff;
   --night-3:#f3ead9;
   --paper:#2a2030;
@@ -69,6 +71,12 @@ body.theme-light{
   --wash-3:rgba(120,70,160,.07);
   color-scheme:light;
 }
+/* background presets: compound selectors so they correctly override the
+   theme's own wash values regardless of stylesheet order */
+body.bg-preset-2{ --wash-1:rgba(196,140,60,.20); --wash-2:rgba(168,122,46,.13); --wash-3:rgba(110,70,30,.12); }
+body.theme-light.bg-preset-2{ --wash-1:rgba(196,140,60,.13); --wash-2:rgba(168,122,46,.09); --wash-3:rgba(110,70,30,.07); }
+body.bg-preset-3{ --wash-1:rgba(46,143,130,.17); --wash-2:rgba(58,110,168,.11); --wash-3:rgba(30,90,70,.15); }
+body.theme-light.bg-preset-3{ --wash-1:rgba(46,143,130,.10); --wash-2:rgba(58,110,168,.07); --wash-3:rgba(30,90,70,.08); }
 *,*::before,*::after{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
@@ -134,6 +142,30 @@ img{max-width:100%;display:block;}
 }
 .theme-toggle:hover{color:var(--gold);background:rgba(var(--tint),.1);}
 .theme-toggle .icon{width:1.25em;height:1.25em;}
+
+/* ====================== CUSTOM PAGE BACKGROUND ====================== */
+.bg-photo-layer{position:fixed;inset:0;z-index:-2;background-size:cover;background-position:center;background-repeat:no-repeat;display:none;}
+.bg-scrim{position:fixed;inset:0;z-index:-1;background:rgba(var(--night-rgb),.84);display:none;}
+body.bg-custom .bg-photo-layer,body.bg-custom .bg-scrim{display:block;}
+.bg-change-btn{
+  position:fixed;right:84px;bottom:22px;z-index:45;width:46px;height:46px;border-radius:50%;
+  background:var(--night-2);border:1px solid rgba(var(--tint),.16);color:var(--text-dim);
+  display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-pop);
+  opacity:0;transform:scale(.85);pointer-events:none;transition:opacity .25s,transform .25s,background-color .15s,color .15s;
+}
+.bg-change-btn.visible{opacity:1;transform:scale(1);pointer-events:auto;}
+.bg-change-btn:hover{background:var(--ember);color:#fff;border-color:var(--ember);}
+@media(max-width:640px){.bg-change-btn{right:14px;bottom:14px;}}
+
+.bg-preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
+.bg-preset-option{
+  border-radius:12px;overflow:hidden;border:2px solid transparent;background:none;padding:0;
+  display:flex;flex-direction:column;gap:6px;align-items:center;color:var(--text-dim);
+}
+.bg-preset-swatch{width:100%;aspect-ratio:1/1;border-radius:10px;border:1px solid rgba(var(--tint),.14);}
+.bg-preset-option span{font-size:.74rem;text-align:center;}
+.bg-preset-option.active{border-color:var(--ember);}
+.bg-preset-option.active span{color:var(--ember);font-weight:700;}
 
 /* ====================== APP / LAYOUT ====================== */
 .app{min-height:calc(100vh - var(--nav-h));animation:fadeUp .35s ease both;}
@@ -240,7 +272,7 @@ body.adult-on .blur-badge{display:none;}
 .story-head-info h1{font-size:clamp(1.4rem,2.6vw,2rem);color:var(--paper);margin-bottom:10px;}
 .story-head-desc{color:var(--text-dim);line-height:1.75;font-size:.93rem;white-space:pre-wrap;flex:1;}
 .story-head-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
-.story-head-stats{display:flex;gap:16px;margin-bottom:14px;color:var(--text-dim2);font-size:.8rem;}
+.story-head-stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;color:var(--text-dim2);font-size:.8rem;}
 .story-head-stats b{color:var(--gold);font-weight:700;}
 
 /* ====================== CHAPTER LIST ====================== */
@@ -257,7 +289,7 @@ body.adult-on .blur-badge{display:none;}
   font-family:var(--font-display);
 }
 .chapter-thumb{
-  width:44px;height:58px;border-radius:8px;overflow:hidden;flex-shrink:0;
+  width:52px;height:52px;border-radius:8px;overflow:hidden;flex-shrink:0;position:relative;
   background:linear-gradient(145deg,var(--night-3),var(--night-2));
   display:flex;align-items:center;justify-content:center;color:var(--text-dim2);
   border:1px solid rgba(var(--tint),.08);
@@ -294,7 +326,22 @@ body.adult-on .blur-badge{display:none;}
 
 /* image picker (cover) */
 .cover-picker{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;}
+
+/* image cropper */
+.cropper-viewport{
+  position:relative;overflow:hidden;margin:0 auto;border-radius:12px;background:var(--night);
+  border:1px solid rgba(var(--tint),.15);touch-action:none;cursor:grab;
+}
+.cropper-viewport:active{cursor:grabbing;}
+.cropper-viewport img{position:absolute;left:0;top:0;max-width:none;user-select:none;-webkit-user-drag:none;pointer-events:none;}
+.cropper-zoom-row{display:flex;align-items:center;gap:10px;margin-top:16px;color:var(--text-dim2);}
+.cropper-zoom-row .icon{width:1.1em;height:1.1em;flex-shrink:0;}
+.cropper-zoom-row input[type="range"]{flex:1;accent-color:var(--ember);}
+.custom-font-list{display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;}
+.custom-font-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:9px;background:rgba(var(--tint),.04);border:1px solid rgba(var(--tint),.08);}
+.custom-font-row span{font-size:.92rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .cover-preview{width:96px;height:128px;border-radius:10px;overflow:hidden;background:linear-gradient(145deg,var(--night-3),var(--night));flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--text-dim2);position:relative;border:1px solid rgba(var(--tint),.1);}
+.cover-preview.is-square{width:110px;height:110px;}
 .cover-preview img{width:100%;height:100%;object-fit:cover;}
 .cover-preview .icon{width:1.8em;height:1.8em;}
 .cover-actions{display:flex;flex-direction:column;gap:8px;}
@@ -408,7 +455,18 @@ body.adult-on .blur-badge{display:none;}
 .reader-empty{text-align:center;color:var(--text-dim);padding:60px 20px;text-indent:0;}
 
 .nav-chap{display:flex;align-items:center;gap:6px;font-size:.86rem;}
-.chap-progress{font-size:.76rem;color:var(--text-dim2);flex-shrink:0;}
+.chap-progress{
+  font-size:.76rem;color:var(--text-dim2);flex-shrink:0;background:rgba(var(--tint),.06);
+  border:1px solid rgba(var(--tint),.12);padding:8px 14px;border-radius:999px;transition:.15s;
+}
+.chap-progress:hover{background:rgba(var(--tint),.13);color:var(--paper);}
+.chapter-jump-list{max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin:4px -4px 0;padding-right:4px;}
+.chapter-jump-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(var(--tint),.03);border:1px solid transparent;color:var(--text);text-align:left;width:100%;}
+.chapter-jump-item:hover{background:rgba(var(--tint),.08);}
+.chapter-jump-item.active{border-color:rgba(232,128,79,.4);background:rgba(232,128,79,.1);color:var(--paper);}
+.chapter-jump-num{width:26px;height:26px;border-radius:50%;background:rgba(217,182,106,.14);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:700;flex-shrink:0;font-family:var(--font-display);}
+.chapter-jump-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem;}
+.chapter-jump-item .icon{width:16px;height:16px;color:var(--ember);flex-shrink:0;}
 
 /* ====================== RESPONSIVE ====================== */
 @media(max-width:640px){
@@ -423,7 +481,7 @@ body.adult-on .blur-badge{display:none;}
   .fab-save{right:14px;bottom:14px;padding:13px 18px;}
   .chapter-row{gap:10px;padding:12px;}
   .chapter-num{display:none;}
-  .chapter-thumb{width:36px;height:48px;}
+  .chapter-thumb{width:40px;height:40px;}
   .chapter-row-actions{gap:2px;}
   .chapter-row-actions .btn-icon{padding:6px;}
   .block-textarea{padding-right:68px;}
@@ -435,12 +493,17 @@ body.adult-on .blur-badge{display:none;}
 </style>
 </head>
 <body>
+<div id="bgPhotoLayer" class="bg-photo-layer"></div>
+<div id="bgScrim" class="bg-scrim"></div>
 <div id="toastHost" class="toast-host" aria-live="polite"></div>
+<button id="bgChangeBtn" class="bg-change-btn" type="button" title="เปลี่ยนพื้นหลัง" aria-label="เปลี่ยนพื้นหลัง">
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+</button>
 
 <nav class="navbar">
   <a href="#/" class="brand">
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/></svg>
-    <span>เรื่องเล่ายามค่ำ<small>พื้นที่เขียนและอ่านนิยาย</small></span>
+    <span>คลังนิยาย<small>พื้นที่เขียนและอ่านนิยาย</small></span>
   </a>
   <a href="#/" class="nav-link" data-nav="home">
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
@@ -491,6 +554,31 @@ var FONT_OPTIONS = [
   {value:"'Kanit', sans-serif", label:"คมชัด (กนิษฐ์)"},
   {value:"'Prompt', sans-serif", label:"พรอมต์"}
 ];
+var MANAGE_FONTS_VALUE = '__manage_fonts__';
+
+function getCustomFonts(){ return storageGet('customFonts', []); }
+function saveCustomFonts(list){ return storageSet('customFonts', list); }
+function injectCustomFontFace(f){
+  var style = document.getElementById('customFontStyles');
+  if(!style){
+    style = document.createElement('style');
+    style.id = 'customFontStyles';
+    document.head.appendChild(style);
+  }
+  style.textContent += '\n@font-face{font-family:"'+f.id+'";src:url('+f.dataUrl+');font-display:swap;}\n';
+}
+function syncFontOptionsWithCustomFonts(fonts){
+  FONT_OPTIONS = FONT_OPTIONS.filter(function(f){ return !f.custom; });
+  fonts.forEach(function(f){
+    FONT_OPTIONS.push({value:"'"+f.id+"', sans-serif", label:f.name, custom:true, fontId:f.id});
+    injectCustomFontFace(f);
+  });
+}
+function loadCustomFontsAtStartup(){
+  return getCustomFonts().then(function(fonts){
+    syncFontOptionsWithCustomFonts(fonts);
+  });
+}
 
 /* ============================================================
    UTILITIES
@@ -507,10 +595,38 @@ function nl2p(text){
   if(lines.length===0) return '';
   return lines.map(function(l){return '<p>'+escapeHtml(l)+'</p>';}).join('');
 }
+var THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 function formatDate(ts){
   try{
     var d = new Date(ts);
     return d.toLocaleDateString('th-TH', {year:'numeric',month:'short',day:'numeric'});
+  }catch(e){ return ''; }
+}
+/* Renders a stored {fx,fy,fw,fh} normalized crop rectangle (fractions of the
+   original image) as an absolutely-positioned <img> filling its container.
+   Pure CSS math, no canvas -> works for any image source incl. remote URLs. */
+function coverCropStyle(crop){
+  if(!crop) return '';
+  var w = (1/crop.fw)*100, h = (1/crop.fh)*100;
+  var l = -(crop.fx/crop.fw)*100, t = -(crop.fy/crop.fh)*100;
+  return 'position:absolute;width:'+w.toFixed(2)+'%;height:'+h.toFixed(2)+'%;left:'+l.toFixed(2)+'%;top:'+t.toFixed(2)+'%;max-width:none;';
+}
+function coverImgHtml(src, crop, fallbackIcon){
+  if(!src) return '<div class="cover-fallback">'+icon(fallbackIcon||'image')+'</div>';
+  if(crop) return '<img src="'+escapeAttr(src)+'" alt="" loading="lazy" style="'+coverCropStyle(crop)+'">';
+  return '<img src="'+escapeAttr(src)+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">';
+}
+function formatDateTime(ts){
+  if(!ts) return '';
+  try{
+    var d = new Date(ts);
+    var day = d.getDate();
+    var month = THAI_MONTHS_SHORT[d.getMonth()];
+    var yearBE = (d.getFullYear() + 543) % 100;
+    var yy = (yearBE<10?'0':'') + yearBE;
+    var hh = (d.getHours()<10?'0':'') + d.getHours();
+    var mm = (d.getMinutes()<10?'0':'') + d.getMinutes();
+    return day + ' ' + month + ' ' + yy + ' ' + hh + ':' + mm;
   }catch(e){ return ''; }
 }
 function toast(msg, isError){
@@ -639,8 +755,15 @@ function getChapterContent(storyId, chapterId){ return storageGet(chapterKey(sto
 function saveChapterContent(ch){ return storageSet(chapterKey(ch.storyId, ch.id), ch); }
 function deleteChapterContent(storyId, chapterId){ return storageDelete(chapterKey(storyId, chapterId)); }
 
-function getSettings(){ return storageGet('settings', {adult:false, theme:'dark', fontSize:20, fontFamily:FONT_OPTIONS[0].value}); }
+function getSettings(){ return storageGet('settings', {adult:false, theme:'dark', fontSize:20, fontFamily:FONT_OPTIONS[0].value, background:{mode:'preset', presetId:1, customSrc:'', customOpacity:0.84}}); }
 function saveSettingsData(s){ return storageSet('settings', s); }
+function getReadingProgress(){ return storageGet('readingProgress', {}); }
+function markChapterRead(storyId, chapterId){
+  getReadingProgress().then(function(map){
+    map[storyId] = chapterId;
+    storageSet('readingProgress', map);
+  });
+}
 
 function findStory(stories, id){
   for(var i=0;i<stories.length;i++){ if(stories[i].id===id) return stories[i]; }
@@ -689,7 +812,7 @@ function moveChapter(storyId, chapterId, dir){
 /* ============================================================
    GLOBAL STATE
 ============================================================ */
-var appSettings = {adult:false, theme:'dark', fontSize:20, fontFamily:FONT_OPTIONS[0].value};
+var appSettings = {adult:false, theme:'dark', fontSize:20, fontFamily:FONT_OPTIONS[0].value, background:{mode:'preset', presetId:1, customSrc:'', customOpacity:0.84}};
 var draftChapter = null;   // {id, storyId, title, cover, content:[...]}
 var draftIsNew = false;
 var draftDirty = false;
@@ -738,8 +861,107 @@ function confirmDialog(message, confirmLabel){
   });
 }
 
+function openChapterJumpModal(story, currentId){
+  var itemsHtml = story.chapters.map(function(c, i){
+    var isActive = c.id === currentId;
+    return (
+      '<button type="button" class="chapter-jump-item'+(isActive?' active':'')+'" data-action="jump-chapter" data-story="'+story.id+'" data-chapter="'+c.id+'">' +
+        '<span class="chapter-jump-num">'+(i+1)+'</span>' +
+        '<span class="chapter-jump-title">'+escapeHtml(c.title)+'</span>' +
+        (isActive ? icon('check') : '') +
+      '</button>'
+    );
+  }).join('');
+  var host = openModal(
+    '<div class="modal-card" style="max-width:420px;">' +
+      '<h3>เลือกตอนที่จะอ่าน</h3>' +
+      '<div class="chapter-jump-list">'+(itemsHtml || '<p class="hint">ยังไม่มีตอน</p>')+'</div>' +
+      '<div class="modal-actions"><button class="btn btn-ghost" id="jumpCancel">ปิด</button></div>' +
+    '</div>'
+  );
+  qs('#jumpCancel', host).addEventListener('click', closeModal);
+}
+
+function renderCustomFontListHtml(fonts){
+  if(!fonts.length) return '<p class="hint">ยังไม่มีฟอนต์ที่เพิ่มเอง</p>';
+  return '<div class="custom-font-list">' + fonts.map(function(f){
+    return (
+      '<div class="custom-font-row">' +
+        '<span style="font-family:\''+f.id+'\', sans-serif;">'+escapeHtml(f.name)+'</span>' +
+        '<button type="button" class="btn-icon" data-action="delete-custom-font" data-font-id="'+f.id+'" title="ลบฟอนต์นี้" aria-label="ลบฟอนต์นี้">'+icon('trash')+'</button>' +
+      '</div>'
+    );
+  }).join('') + '</div>';
+}
+function openManageFontsModal(){
+  return new Promise(function(resolve){
+    getCustomFonts().then(function(fonts){
+      var host = openModal(
+        '<div class="modal-card" style="max-width:420px;">' +
+          '<h3>ฟอนต์ของฉัน</h3>' +
+          '<div id="customFontListWrap">'+renderCustomFontListHtml(fonts)+'</div>' +
+          '<p class="hint" style="margin-top:16px;">เพิ่มฟอนต์ใหม่จากไฟล์ในเครื่อง (.ttf .otf .woff .woff2) — ใช้ได้กับฟอนต์ที่คุณมีสิทธิ์ใช้งานเอง เช่น ฟอนต์ที่ดาวน์โหลดจาก f0nt.com</p>' +
+          '<div class="field"><label>ชื่อฟอนต์ (ใช้แสดงในเมนู)</label><input class="input" id="customFontName" placeholder="เช่น Ekkamai Standard"></div>' +
+          '<div class="field"><label>ไฟล์ฟอนต์</label><input type="file" class="input" id="customFontFile" accept=".ttf,.otf,.woff,.woff2"></div>' +
+          '<div class="modal-actions">' +
+            '<button class="btn btn-ghost" id="customFontClose">ปิด</button>' +
+            '<button class="btn btn-primary" id="customFontSave">'+icon('plus')+' เพิ่มฟอนต์</button>' +
+          '</div>' +
+        '</div>'
+      );
+      var changed = false;
+      qs('#customFontClose', host).addEventListener('click', function(){ closeModal(); resolve(changed); });
+      host.addEventListener('click', function(e){
+        var delBtn = e.target.closest('[data-action="delete-custom-font"]');
+        if(!delBtn) return;
+        var fontId = delBtn.getAttribute('data-font-id');
+        getCustomFonts().then(function(list){
+          var remaining = list.filter(function(f){ return f.id !== fontId; });
+          saveCustomFonts(remaining).then(function(){
+            syncFontOptionsWithCustomFonts(remaining);
+            changed = true;
+            qs('#customFontListWrap', host).innerHTML = renderCustomFontListHtml(remaining);
+            toast('ลบฟอนต์แล้ว');
+          });
+        });
+      });
+      qs('#customFontSave', host).addEventListener('click', function(){
+        var name = qs('#customFontName', host).value.trim();
+        var f = qs('#customFontFile', host).files[0];
+        if(!name){ toast('กรุณาตั้งชื่อฟอนต์', true); return; }
+        if(!f){ toast('กรุณาเลือกไฟล์ฟอนต์', true); return; }
+        var saveBtn = qs('#customFontSave', host);
+        saveBtn.disabled = true; saveBtn.textContent = 'กำลังเพิ่ม...';
+        var reader = new FileReader();
+        reader.onload = function(e){
+          getCustomFonts().then(function(list){
+            var entry = {id:'CustomFont_'+genId(), name:name, dataUrl:e.target.result};
+            list.push(entry);
+            saveCustomFonts(list).then(function(){
+              syncFontOptionsWithCustomFonts(list);
+              changed = true;
+              qs('#customFontListWrap', host).innerHTML = renderCustomFontListHtml(list);
+              qs('#customFontName', host).value = '';
+              qs('#customFontFile', host).value = '';
+              saveBtn.disabled = false; saveBtn.innerHTML = icon('plus')+' เพิ่มฟอนต์';
+              toast('เพิ่มฟอนต์แล้ว');
+            });
+          });
+        };
+        reader.onerror = function(){
+          toast('ไม่สามารถอ่านไฟล์ฟอนต์นี้ได้', true);
+          saveBtn.disabled = false; saveBtn.innerHTML = icon('plus')+' เพิ่มฟอนต์';
+        };
+        reader.readAsDataURL(f);
+      });
+    });
+  });
+}
+
 /* image picker modal -> resolves a src string (url or dataURL), or null if cancelled */
-function pickImageModal(){
+function pickImageModal(opts){
+  opts = opts || {};
+  var ratio = opts.ratio || null;
   return new Promise(function(resolve){
     var host = openModal(
       '<div class="modal-card" style="max-width:400px;">' +
@@ -758,7 +980,7 @@ function pickImageModal(){
         '</div>' +
         '<div class="modal-actions">' +
           '<button class="btn btn-ghost" id="pickCancel">ยกเลิก</button>' +
-          '<button class="btn btn-primary" id="pickConfirm">'+icon('check')+' เพิ่มรูปภาพ</button>' +
+          '<button class="btn btn-primary" id="pickConfirm">'+icon('check')+' '+(ratio?'ถัดไป':'เพิ่มรูปภาพ')+'</button>' +
         '</div>' +
       '</div>'
     );
@@ -771,24 +993,139 @@ function pickImageModal(){
       });
     });
     qs('#pickCancel', host).addEventListener('click', function(){ closeModal(); resolve(null); });
+    function proceed(src){
+      closeModal();
+      if(ratio){
+        openCropperModal(src, ratio).then(resolve);
+      } else {
+        resolve(src);
+      }
+    }
     qs('#pickConfirm', host).addEventListener('click', function(){
       var activeTab = qs('.tab-btn.active', host).getAttribute('data-tab');
       if(activeTab === 'link'){
         var url = qs('#pickLinkInput', host).value.trim();
         if(!url){ toast('กรุณาวางลิงก์รูปภาพ', true); return; }
-        closeModal(); resolve(url);
+        proceed(url);
       } else {
         var f = qs('#pickFileInput', host).files[0];
         if(!f){ toast('กรุณาเลือกไฟล์รูปภาพ', true); return; }
         var confirmBtn = qs('#pickConfirm', host);
         confirmBtn.disabled = true; confirmBtn.textContent = 'กำลังประมวลผล...';
         compressImage(f).then(function(dataUrl){
-          closeModal(); resolve(dataUrl);
+          proceed(dataUrl);
         }).catch(function(){
           toast('ไม่สามารถอ่านไฟล์รูปภาพนี้ได้', true);
-          confirmBtn.disabled = false; confirmBtn.innerHTML = icon('check')+' เพิ่มรูปภาพ';
+          confirmBtn.disabled = false; confirmBtn.innerHTML = icon('check')+' '+(ratio?'ถัดไป':'เพิ่มรูปภาพ');
         });
       }
+    });
+  });
+}
+
+/* Interactive drag-to-pan + slider-to-zoom cropper. Resolves
+   {src, crop:{fx,fy,fw,fh}} or {src, crop:null} on load failure,
+   or null if cancelled. Uses plain CSS transforms (no canvas), so
+   it works for remote image URLs regardless of CORS headers. */
+function openCropperModal(src, ratio){
+  return new Promise(function(resolve){
+    var viewportW = 280;
+    var viewportH = Math.round(viewportW / ratio);
+    var host = openModal(
+      '<div class="modal-card" style="max-width:360px;">' +
+        '<h3>ปรับตำแหน่งและขนาดภาพ</h3>' +
+        '<div class="cropper-viewport" id="cropperViewport" style="width:'+viewportW+'px;height:'+viewportH+'px;">' +
+          '<img id="cropperImg" src="'+escapeAttr(src)+'" alt="" draggable="false">' +
+        '</div>' +
+        '<div class="cropper-zoom-row">' +
+          icon('image') +
+          '<input type="range" id="cropperZoom" min="100" max="320" value="100" step="1">' +
+        '</div>' +
+        '<p class="hint">ลากภาพเพื่อจัดตำแหน่ง ใช้แถบเลื่อนเพื่อซูม</p>' +
+        '<div class="modal-actions">' +
+          '<button class="btn btn-ghost" id="cropperCancel">ยกเลิก</button>' +
+          '<button class="btn btn-primary" id="cropperConfirm">'+icon('check')+' ใช้รูปนี้</button>' +
+        '</div>' +
+      '</div>'
+    );
+    var imgEl = qs('#cropperImg', host);
+    var viewport = qs('#cropperViewport', host);
+    var zoomSlider = qs('#cropperZoom', host);
+    var naturalW=0, naturalH=0, baseScale=1, zoom=1, tx=0, ty=0, ready=false;
+
+    function applyTransform(){
+      var dW = naturalW*baseScale*zoom, dH = naturalH*baseScale*zoom;
+      imgEl.style.width = dW+'px';
+      imgEl.style.height = dH+'px';
+      imgEl.style.left = tx+'px';
+      imgEl.style.top = ty+'px';
+    }
+    function clampPos(){
+      var dW = naturalW*baseScale*zoom, dH = naturalH*baseScale*zoom;
+      tx = Math.min(0, Math.max(viewportW - dW, tx));
+      ty = Math.min(0, Math.max(viewportH - dH, ty));
+    }
+    function onImgLoad(){
+      naturalW = imgEl.naturalWidth || 1;
+      naturalH = imgEl.naturalHeight || 1;
+      baseScale = Math.max(viewportW/naturalW, viewportH/naturalH);
+      zoom = 1;
+      tx = (viewportW - naturalW*baseScale)/2;
+      ty = (viewportH - naturalH*baseScale)/2;
+      clampPos();
+      applyTransform();
+      ready = true;
+    }
+    function onImgError(){
+      toast('ไม่สามารถโหลดรูปภาพนี้ได้ จะใช้รูปแบบมาตรฐานแทน', true);
+      closeModal();
+      resolve({src:src, crop:null});
+    }
+    if(imgEl.complete && imgEl.naturalWidth){ onImgLoad(); }
+    else {
+      imgEl.addEventListener('load', onImgLoad);
+      imgEl.addEventListener('error', onImgError);
+    }
+
+    var dragging=false, startX=0, startY=0, startTx=0, startTy=0;
+    viewport.addEventListener('pointerdown', function(e){
+      if(!ready) return;
+      dragging = true; startX = e.clientX; startY = e.clientY; startTx = tx; startTy = ty;
+      if(viewport.setPointerCapture){ try{ viewport.setPointerCapture(e.pointerId); }catch(err){} }
+    });
+    viewport.addEventListener('pointermove', function(e){
+      if(!dragging) return;
+      tx = startTx + (e.clientX - startX);
+      ty = startTy + (e.clientY - startY);
+      clampPos();
+      applyTransform();
+    });
+    function endDrag(){ dragging = false; }
+    viewport.addEventListener('pointerup', endDrag);
+    viewport.addEventListener('pointercancel', endDrag);
+    viewport.addEventListener('pointerleave', endDrag);
+
+    zoomSlider.addEventListener('input', function(){
+      if(!ready) return;
+      var newZoom = parseInt(zoomSlider.value,10)/100;
+      var oldDW = naturalW*baseScale*zoom, oldDH = naturalH*baseScale*zoom;
+      var cx = viewportW/2, cy = viewportH/2;
+      var relX = (cx - tx)/oldDW, relY = (cy - ty)/oldDH;
+      zoom = newZoom;
+      var newDW = naturalW*baseScale*zoom, newDH = naturalH*baseScale*zoom;
+      tx = cx - relX*newDW;
+      ty = cy - relY*newDH;
+      clampPos();
+      applyTransform();
+    });
+
+    qs('#cropperCancel', host).addEventListener('click', function(){ closeModal(); resolve(null); });
+    qs('#cropperConfirm', host).addEventListener('click', function(){
+      if(!ready){ toast('กำลังโหลดรูปภาพ กรุณารอสักครู่', true); return; }
+      var dW = naturalW*baseScale*zoom, dH = naturalH*baseScale*zoom;
+      var crop = { fx:(-tx)/dW, fy:(-ty)/dH, fw:viewportW/dW, fh:viewportH/dH };
+      closeModal();
+      resolve({src:src, crop:crop});
     });
   });
 }
@@ -835,9 +1172,7 @@ function renderHomeView(app){
   return getStories().then(function(stories){
     stories = stories.slice().sort(function(a,b){ return (b.updatedAt||b.createdAt) - (a.updatedAt||a.createdAt); });
     var cards = stories.map(function(s){
-      var coverHtml = s.cover
-        ? '<img src="'+escapeAttr(s.cover)+'" alt="" loading="lazy">'
-        : '<div class="cover-fallback">'+icon('book')+'</div>';
+      var coverHtml = coverImgHtml(s.cover, s.coverCrop, 'book');
       return (
         '<div class="story-card">' +
           '<button class="story-card-del" data-action="delete-story" data-story="'+s.id+'" title="ลบเรื่องนี้" aria-label="ลบเรื่องนี้">'+icon('trash')+'</button>' +
@@ -873,19 +1208,17 @@ function renderHomeView(app){
 
 /* story create/edit modal */
 function openStoryModal(existing){
-  draftStory = existing ? JSON.parse(JSON.stringify(existing)) : {id:null, title:'', description:'', cover:'', chapters:[]};
+  draftStory = existing ? JSON.parse(JSON.stringify(existing)) : {id:null, title:'', description:'', cover:'', coverCrop:null, chapters:[]};
   var isEdit = !!existing;
   var host = openModal(
     '<div class="modal-card" style="max-width:480px;">' +
       '<h3>'+(isEdit?'แก้ไขข้อมูลเรื่อง':'เพิ่มเรื่องใหม่')+'</h3>' +
       '<div class="field">' +
-        '<label>ภาพหน้าปก</label>' +
+        '<label>ภาพหน้าปก (อัตราส่วน 3:4)</label>' +
         '<div class="cover-picker">' +
-          '<div class="cover-preview" id="storyCoverPreview">' +
-            (draftStory.cover ? '<img src="'+escapeAttr(draftStory.cover)+'" alt="">' : icon('image')) +
-          '</div>' +
+          '<div class="cover-preview" id="storyCoverPreview">' + coverImgHtml(draftStory.cover, draftStory.coverCrop, 'book') + '</div>' +
           '<div class="cover-actions">' +
-            '<button type="button" class="btn btn-ghost btn-sm" id="storyCoverPick">'+icon('image')+' เลือกรูปภาพ</button>' +
+            '<button type="button" class="btn btn-ghost btn-sm" id="storyCoverPick">'+icon('image')+' เลือก/ครอบรูปภาพ</button>' +
             '<button type="button" class="btn btn-ghost btn-sm" id="storyCoverRemove">'+icon('x')+' ลบรูปปก</button>' +
           '</div>' +
         '</div>' +
@@ -899,14 +1232,16 @@ function openStoryModal(existing){
     '</div>'
   );
   qs('#storyCoverPick', host).addEventListener('click', function(){
-    pickImageModal().then(function(src){
-      if(!src) return;
-      draftStory.cover = src;
-      qs('#storyCoverPreview', host).innerHTML = '<img src="'+escapeAttr(src)+'" alt="">';
+    pickImageModal({ratio: 3/4}).then(function(result){
+      if(!result) return;
+      draftStory.cover = result.src;
+      draftStory.coverCrop = result.crop;
+      qs('#storyCoverPreview', host).innerHTML = coverImgHtml(draftStory.cover, draftStory.coverCrop, 'book');
     });
   });
   qs('#storyCoverRemove', host).addEventListener('click', function(){
     draftStory.cover = '';
+    draftStory.coverCrop = null;
     qs('#storyCoverPreview', host).innerHTML = icon('image');
   });
   qs('#storyCancel', host).addEventListener('click', function(){ closeModal(); });
@@ -925,6 +1260,7 @@ function openStoryModal(existing){
           stories[existingIdx].title = title;
           stories[existingIdx].description = desc;
           stories[existingIdx].cover = draftStory.cover;
+          stories[existingIdx].coverCrop = draftStory.coverCrop;
           stories[existingIdx].updatedAt = now;
         }
       } else {
@@ -949,23 +1285,25 @@ function openStoryModal(existing){
    VIEW: STORY DETAIL (chapter list / table of contents)
 ============================================================ */
 function renderStoryView(app, storyId){
-  return getStories().then(function(stories){
+  return Promise.all([getStories(), getReadingProgress()]).then(function(results){
+    var stories = results[0], progress = results[1];
     var story = findStory(stories, storyId);
     if(!story){
       app.innerHTML = '<div class="container"><div class="empty-state"><h3>ไม่พบเรื่องนี้</h3><a class="btn btn-primary" href="#/">กลับหน้าแรก</a></div></div>';
       return;
     }
-    var coverHtml = story.cover ? '<img src="'+escapeAttr(story.cover)+'" alt="">' : '<div class="cover-fallback">'+icon('book')+'</div>';
+    var coverHtml = coverImgHtml(story.cover, story.coverCrop, 'book');
     var chapters = story.chapters || [];
+    var resumeChapterId = progress[story.id];
+    var resumeExists = resumeChapterId && chapters.some(function(c){ return c.id===resumeChapterId; });
 
     var previewMap = {};
     var rows = chapters.map(function(ch, idx){
       previewMap[ch.id] = ch.previewImage || ch.cover || '';
-      var thumbSrc = ch.cover || ch.previewImage || '';
-      var thumbHtml = thumbSrc
-        ? '<img src="'+escapeAttr(thumbSrc)+'" alt="" loading="lazy">'
-        : '<div class="cover-fallback">'+icon('image')+'</div>';
-      var metaBits = ['อัปเดต '+formatDate(ch.updatedAt||ch.createdAt)];
+      var thumbHtml = ch.cover
+        ? coverImgHtml(ch.cover, ch.coverCrop, 'image')
+        : coverImgHtml(ch.previewImage, null, 'image');
+      var metaBits = ['อัปเดต '+formatDateTime(ch.updatedAt||ch.createdAt)];
       if(ch.wordCount != null) metaBits.push(ch.wordCount.toLocaleString('th-TH')+' คำ');
       return (
         '<div class="chapter-row" data-action="goto-read" data-story="'+story.id+'" data-chapter="'+ch.id+'" ' +
@@ -994,10 +1332,12 @@ function renderStoryView(app, storyId){
           '<div class="story-head-cover"><div class="preview-blur" style="width:100%;height:100%;position:relative;">'+coverHtml+'<div class="blur-badge">'+icon('eye')+'<span>18+</span></div></div></div>' +
           '<div class="story-head-info">' +
             '<h1>'+escapeHtml(story.title)+'</h1>' +
-            '<div class="story-head-stats"><span><b>'+chapters.length+'</b> ตอน</span><span>อัปเดต '+formatDate(story.updatedAt||story.createdAt)+'</span></div>' +
+            '<div class="story-head-stats"><span><b>'+chapters.length+'</b> ตอน</span><span>สร้างเมื่อ '+formatDateTime(story.createdAt)+'</span><span>อัปเดตล่าสุด '+formatDateTime(story.updatedAt||story.createdAt)+'</span></div>' +
             '<p class="story-head-desc">'+escapeHtml(story.description || 'ยังไม่มีเรื่องย่อ')+'</p>' +
             '<div class="story-head-actions">' +
               '<button class="btn btn-primary" data-action="new-chapter" data-story="'+story.id+'">'+icon('plus')+' เพิ่มตอนใหม่</button>' +
+              (resumeExists ? '<a class="btn btn-primary" href="#/read/'+story.id+'/'+resumeChapterId+'">'+icon('bookOpen')+' อ่านต่อ</a>' : '') +
+              (chapters.length ? '<a class="btn btn-ghost" href="#/read/'+story.id+'/'+chapters[chapters.length-1].id+'">'+icon('chevRight')+' อ่านตอนล่าสุด</a>' : '') +
               (chapters.length ? '<a class="btn btn-ghost" href="#/read/'+story.id+'/'+chapters[0].id+'">'+icon('eye')+' เริ่มอ่านตอนแรก</a>' : '') +
             '</div>' +
           '</div>' +
@@ -1051,10 +1391,10 @@ function renderEditorView(app, storyId, chapterId){
     draftIsNew = (chapterId === 'new');
     var loadPromise;
     if(draftIsNew){
-      loadPromise = Promise.resolve({id:null, storyId:story.id, title:'', cover:'', content:[]});
+      loadPromise = Promise.resolve({id:null, storyId:story.id, title:'', cover:'', coverCrop:null, content:[]});
     } else {
       loadPromise = getChapterContent(storyId, chapterId).then(function(ch){
-        return ch || {id:chapterId, storyId:story.id, title:'', cover:'', content:[]};
+        return ch || {id:chapterId, storyId:story.id, title:'', cover:'', coverCrop:null, content:[]};
       });
     }
     return loadPromise.then(function(ch){
@@ -1070,13 +1410,11 @@ function renderEditorView(app, storyId, chapterId){
           '</div>' +
           '<div class="field"><label>ชื่อตอน</label><input class="input" id="chapterTitleInput" placeholder="เช่น ตอนที่ 1: จุดเริ่มต้น" value="'+escapeAttr(ch.title)+'"></div>' +
           '<div class="field">' +
-            '<label>ภาพหน้าตอน</label>' +
+            '<label>ภาพหน้าตอน — ตัวอย่างอัตราส่วน 1:1 (หน้าอ่านจะแสดงภาพเต็ม)</label>' +
             '<div class="cover-picker">' +
-              '<div class="cover-preview" id="chapterCoverPreview">' +
-                (ch.cover ? '<img src="'+escapeAttr(ch.cover)+'" alt="">' : icon('image')) +
-              '</div>' +
+              '<div class="cover-preview is-square" id="chapterCoverPreview">' + coverImgHtml(ch.cover, ch.coverCrop) + '</div>' +
               '<div class="cover-actions">' +
-                '<button type="button" class="btn btn-ghost btn-sm" id="chapterCoverPick">'+icon('image')+' เลือกรูปภาพ</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" id="chapterCoverPick">'+icon('image')+' เลือก/ครอบรูปภาพ</button>' +
                 '<button type="button" class="btn btn-ghost btn-sm" id="chapterCoverRemove">'+icon('x')+' ลบรูปภาพ</button>' +
               '</div>' +
             '</div>' +
@@ -1244,15 +1582,17 @@ function wireEditorEvents(story){
   });
 
   qs('#chapterCoverPick').addEventListener('click', function(){
-    pickImageModal().then(function(src){
-      if(!src) return;
-      draftChapter.cover = src;
-      qs('#chapterCoverPreview').innerHTML = '<img src="'+escapeAttr(src)+'" alt="">';
+    pickImageModal({ratio: 1}).then(function(result){
+      if(!result) return;
+      draftChapter.cover = result.src;
+      draftChapter.coverCrop = result.crop;
+      qs('#chapterCoverPreview').innerHTML = coverImgHtml(draftChapter.cover, draftChapter.coverCrop);
       markDirty();
     });
   });
   qs('#chapterCoverRemove').addEventListener('click', function(){
     draftChapter.cover = '';
+    draftChapter.coverCrop = null;
     qs('#chapterCoverPreview').innerHTML = icon('image');
     markDirty();
   });
@@ -1301,11 +1641,12 @@ function saveDraftChapter(story){
       if(meta){
         meta.title = draftChapter.title;
         meta.cover = draftChapter.cover;
+        meta.coverCrop = draftChapter.coverCrop;
         meta.previewImage = preview;
         meta.wordCount = words;
         meta.updatedAt = now;
       } else {
-        s.chapters.push({id:draftChapter.id, title:draftChapter.title, cover:draftChapter.cover, previewImage:preview, wordCount:words, createdAt:now, updatedAt:now});
+        s.chapters.push({id:draftChapter.id, title:draftChapter.title, cover:draftChapter.cover, coverCrop:draftChapter.coverCrop, previewImage:preview, wordCount:words, createdAt:now, updatedAt:now});
       }
       s.updatedAt = now;
       return saveStories(stories);
@@ -1346,7 +1687,7 @@ function renderReadView(app, storyId, chapterId){
         appSettings = settings;
         var fontOptionsHtml = FONT_OPTIONS.map(function(f){
           return '<option value="'+escapeAttr(f.value)+'" '+(f.value===settings.fontFamily?'selected':'')+'>'+escapeHtml(f.label)+'</option>';
-        }).join('');
+        }).join('') + '<option value="'+MANAGE_FONTS_VALUE+'">+ จัดการฟอนต์ของฉัน...</option>';
 
         var blocksHtmlStr = (ch.content||[]).map(function(b){
           if(b.type==='text'){
@@ -1378,11 +1719,12 @@ function renderReadView(app, storyId, chapterId){
             '</main>' +
             '<footer class="reader-bottom" id="readerBottom">' +
               '<button class="btn btn-ghost nav-chap" id="prevChapterBtn" '+(prevCh?'':'disabled')+'>'+icon('chevLeft')+'<span>ตอนที่แล้ว</span></button>' +
-              '<span class="chap-progress">ตอน '+(idx+1)+' / '+chapters.length+'</span>' +
+              '<button type="button" class="chap-progress" data-action="open-chapter-jump" data-story="'+story.id+'" data-chapter="'+ch.id+'">ตอน '+(idx+1)+' / '+chapters.length+'</button>' +
               '<button class="btn btn-primary nav-chap" id="nextChapterBtn" '+(nextCh?'':'disabled')+'><span>ตอนต่อไป</span>'+icon('chevRight')+'</button>' +
             '</footer>' +
           '</div>';
 
+        markChapterRead(story.id, ch.id);
         wireReaderEvents(story, prevCh, nextCh);
       });
     });
@@ -1418,6 +1760,11 @@ function wireReaderEvents(story, prevCh, nextCh){
     saveSettingsData(appSettings);
   });
   qs('#fontFamilySelect').addEventListener('change', function(e){
+    if(e.target.value === MANAGE_FONTS_VALUE){
+      e.target.value = appSettings.fontFamily;
+      openManageFontsModal().then(function(){ render(); });
+      return;
+    }
     appSettings.fontFamily = e.target.value;
     content.style.fontFamily = appSettings.fontFamily;
     saveSettingsData(appSettings);
@@ -1517,6 +1864,18 @@ document.addEventListener('click', function(e){
     navigate('#/read/' + t.getAttribute('data-story') + '/' + t.getAttribute('data-chapter'));
     return;
   }
+  if((t = e.target.closest('[data-action="open-chapter-jump"]'))){
+    getStories().then(function(stories){
+      var s = findStory(stories, t.getAttribute('data-story'));
+      if(s) openChapterJumpModal(s, t.getAttribute('data-chapter'));
+    });
+    return;
+  }
+  if((t = e.target.closest('[data-action="jump-chapter"]'))){
+    closeModal();
+    navigate('#/read/' + t.getAttribute('data-story') + '/' + t.getAttribute('data-chapter'));
+    return;
+  }
 });
 
 /* ============================================================
@@ -1552,14 +1911,125 @@ function initThemeToggle(){
     appSettings.theme = (appSettings.theme === 'light') ? 'dark' : 'light';
     applyState();
     saveSettingsData(appSettings);
+    applyBackground();
   });
 }
 
+/* ============================================================
+   CUSTOM PAGE BACKGROUND
+============================================================ */
+var BG_PRESETS = [
+  {id:1, name:'ค่ำคืนเอมเบอร์', swatch:'radial-gradient(circle at 30% 25%, rgba(232,128,79,.75), transparent 60%), radial-gradient(circle at 78% 75%, rgba(120,70,160,.7), transparent 60%), #15101d'},
+  {id:2, name:'ห้องสมุดอบอุ่น', swatch:'radial-gradient(circle at 30% 25%, rgba(196,140,60,.8), transparent 60%), radial-gradient(circle at 78% 75%, rgba(110,70,30,.7), transparent 60%), #1d160e'},
+  {id:3, name:'ป่าหมอกราตรี', swatch:'radial-gradient(circle at 30% 25%, rgba(46,143,130,.75), transparent 60%), radial-gradient(circle at 78% 75%, rgba(58,110,168,.7), transparent 60%), #0e1718'}
+];
+function getBackgroundSettings(){
+  return appSettings.background || {mode:'preset', presetId:1, customSrc:'', customOpacity:0.84};
+}
+function applyBackground(){
+  var bg = getBackgroundSettings();
+  document.body.classList.remove('bg-preset-2','bg-preset-3','bg-custom');
+  var photoLayer = document.getElementById('bgPhotoLayer');
+  var scrim = document.getElementById('bgScrim');
+  if(bg.mode === 'custom' && bg.customSrc){
+    document.body.classList.add('bg-custom');
+    photoLayer.style.backgroundImage = 'url("'+bg.customSrc.replace(/"/g,'%22')+'")';
+    scrim.style.background = 'rgba(var(--night-rgb),'+(bg.customOpacity!=null?bg.customOpacity:0.84)+')';
+  } else {
+    photoLayer.style.backgroundImage = '';
+    if(bg.presetId === 2) document.body.classList.add('bg-preset-2');
+    else if(bg.presetId === 3) document.body.classList.add('bg-preset-3');
+  }
+}
+function initBackgroundCorner(){
+  var btn = document.getElementById('bgChangeBtn');
+  var threshold = 170;
+  var isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if(isTouch){
+    btn.classList.add('visible');
+    btn.style.opacity = '.55';
+  } else {
+    document.addEventListener('mousemove', function(e){
+      var dx = window.innerWidth - e.clientX;
+      var dy = window.innerHeight - e.clientY;
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      btn.classList.toggle('visible', dist < threshold);
+    });
+  }
+  btn.addEventListener('click', function(){ openBackgroundModal(); });
+}
+function openBackgroundModal(){
+  var bg = getBackgroundSettings();
+  var presetsHtml = BG_PRESETS.map(function(p){
+    var isActive = bg.mode==='preset' && bg.presetId===p.id;
+    return (
+      '<button type="button" class="bg-preset-option'+(isActive?' active':'')+'" data-action="choose-bg-preset" data-preset-id="'+p.id+'">' +
+        '<span class="bg-preset-swatch" style="background:'+p.swatch+';"></span>' +
+        '<span>'+p.name+(isActive?' ✓':'')+'</span>' +
+      '</button>'
+    );
+  }).join('');
+  var host = openModal(
+    '<div class="modal-card" style="max-width:460px;">' +
+      '<h3>เปลี่ยนพื้นหลังเว็บ</h3>' +
+      '<p class="hint">เลือกพื้นหลังสำเร็จรูป</p>' +
+      '<div class="bg-preset-grid">'+presetsHtml+'</div>' +
+      '<p class="hint" style="margin-top:18px;">หรือใช้ภาพพื้นหลังของคุณเอง</p>' +
+      '<div class="cover-picker">' +
+        '<div class="cover-preview" id="bgCustomPreview" style="width:120px;height:72px;">' +
+          (bg.mode==='custom' && bg.customSrc ? '<img src="'+escapeAttr(bg.customSrc)+'" alt="" style="width:100%;height:100%;object-fit:cover;">' : icon('image')) +
+        '</div>' +
+        '<div class="cover-actions">' +
+          '<button type="button" class="btn btn-ghost btn-sm" id="bgCustomPick">'+icon('image')+' เลือกรูปภาพ</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" id="bgCustomRemove">'+icon('x')+' ใช้แบบสำเร็จรูปแทน</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="field" style="margin-top:14px;"><label>ความเข้มของภาพ (ความชัดของตัวอักษร)</label>' +
+        '<input type="range" id="bgOpacitySlider" min="40" max="95" value="'+Math.round((bg.customOpacity!=null?bg.customOpacity:0.84)*100)+'"></div>' +
+      '<div class="modal-actions"><button class="btn btn-ghost" id="bgModalClose">ปิด</button></div>' +
+    '</div>'
+  );
+  function persist(){ saveSettingsData(appSettings); applyBackground(); }
+  qsa('[data-action="choose-bg-preset"]', host).forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var pid = parseInt(btn.getAttribute('data-preset-id'),10);
+      appSettings.background = {mode:'preset', presetId:pid, customSrc:'', customOpacity:getBackgroundSettings().customOpacity};
+      persist();
+      qsa('.bg-preset-option', host).forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  });
+  qs('#bgCustomPick', host).addEventListener('click', function(){
+    pickImageModal().then(function(src){
+      if(!src) return;
+      var prevOpacity = getBackgroundSettings().customOpacity;
+      appSettings.background = {mode:'custom', presetId:getBackgroundSettings().presetId, customSrc:src, customOpacity:(prevOpacity!=null?prevOpacity:0.84)};
+      persist();
+      qs('#bgCustomPreview', host).innerHTML = '<img src="'+escapeAttr(src)+'" alt="" style="width:100%;height:100%;object-fit:cover;">';
+    });
+  });
+  qs('#bgCustomRemove', host).addEventListener('click', function(){
+    var current = getBackgroundSettings();
+    appSettings.background = {mode:'preset', presetId:current.presetId||1, customSrc:'', customOpacity:current.customOpacity};
+    persist();
+    qs('#bgCustomPreview', host).innerHTML = icon('image');
+  });
+  qs('#bgOpacitySlider', host).addEventListener('input', function(e){
+    var current = getBackgroundSettings();
+    current.customOpacity = parseInt(e.target.value,10)/100;
+    appSettings.background = current;
+    persist();
+  });
+  qs('#bgModalClose', host).addEventListener('click', closeModal);
+}
+
 function init(){
-  getSettings().then(function(s){
-    appSettings = s;
+  Promise.all([getSettings(), loadCustomFontsAtStartup()]).then(function(results){
+    appSettings = results[0];
     initAdultToggle();
     initThemeToggle();
+    applyBackground();
+    initBackgroundCorner();
     render();
   });
 }
