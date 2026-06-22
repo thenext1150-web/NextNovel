@@ -71,12 +71,7 @@ body.theme-light{
   --wash-3:rgba(120,70,160,.07);
   color-scheme:light;
 }
-/* background presets: compound selectors so they correctly override the
-   theme's own wash values regardless of stylesheet order */
-body.bg-preset-2{ --wash-1:rgba(196,140,60,.20); --wash-2:rgba(168,122,46,.13); --wash-3:rgba(110,70,30,.12); }
-body.theme-light.bg-preset-2{ --wash-1:rgba(196,140,60,.13); --wash-2:rgba(168,122,46,.09); --wash-3:rgba(110,70,30,.07); }
-body.bg-preset-3{ --wash-1:rgba(46,143,130,.17); --wash-2:rgba(58,110,168,.11); --wash-3:rgba(30,90,70,.15); }
-body.theme-light.bg-preset-3{ --wash-1:rgba(46,143,130,.10); --wash-2:rgba(58,110,168,.07); --wash-3:rgba(30,90,70,.08); }
+/* background presets are applied directly via JS body.style.background — no class overrides needed */
 *,*::before,*::after{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
@@ -155,7 +150,7 @@ body.bg-custom .bg-photo-layer,body.bg-custom .bg-scrim{display:block;}
 }
 .bg-change-btn.visible{opacity:1;transform:scale(1);pointer-events:auto;}
 .bg-change-btn:hover{background:var(--ember);color:#fff;border-color:var(--ember);}
-@media(max-width:640px){.bg-change-btn{right:14px;bottom:14px;}}
+@media(max-width:640px){.bg-change-btn{right:14px;bottom:74px;}}
 
 .bg-preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
 .bg-preset-option{
@@ -422,6 +417,14 @@ body.adult-on .blur-badge{display:none;}
 .dirty-dot{width:7px;height:7px;border-radius:50%;background:#fff;display:none;}
 .fab-save.dirty .dirty-dot{display:block;animation:pulse 1.4s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.fab-export{
+  position:fixed;left:22px;bottom:22px;z-index:50;
+  display:flex;align-items:center;gap:8px;padding:13px 20px;border-radius:999px;
+  background:linear-gradient(135deg,var(--gold),#b88c2e);color:#2a1e00;font-weight:700;font-size:.9rem;
+  box-shadow:0 14px 34px -10px rgba(217,182,106,.6);border:none;transition:.18s;
+}
+.fab-export:hover{transform:translateY(-2px);filter:brightness(1.08);}
+.fab-export .icon{width:1.1em;height:1.1em;}
 
 /* ====================== READER ====================== */
 .reader{min-height:100vh;}
@@ -479,6 +482,7 @@ body.adult-on .blur-badge{display:none;}
   .reader-content{padding:34px 16px 90px;}
   .reader-content p{text-indent:1.4em;}
   .fab-save{right:14px;bottom:14px;padding:13px 18px;}
+  .fab-export{left:14px;bottom:14px;padding:11px 16px;font-size:.82rem;}
   .chapter-row{gap:10px;padding:12px;}
   .chapter-num{display:none;}
   .chapter-thumb{width:40px;height:40px;}
@@ -490,6 +494,102 @@ body.adult-on .blur-badge{display:none;}
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.001ms !important;transition-duration:.001ms !important;}
 }
+
+/* ====================== MANGA ====================== */
+/* content-mode 3-way toggle */
+.content-mode-toggle{
+  display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;
+  border:1px solid rgba(var(--tint),.14);background:rgba(var(--tint),.04);
+  color:var(--text-dim);font-size:.84rem;font-weight:600;letter-spacing:.2px;
+  transition:.2s;white-space:nowrap;
+}
+.content-mode-toggle:hover{color:var(--paper);background:rgba(var(--tint),.1);}
+.content-mode-toggle .icon{width:1em;height:1em;flex-shrink:0;}
+.content-mode-toggle.mode-novel{border-color:rgba(232,128,79,.45);background:rgba(232,128,79,.12);color:var(--ember);}
+.content-mode-toggle.mode-manga{border-color:rgba(217,182,106,.45);background:rgba(217,182,106,.12);color:var(--gold);}
+.content-mode-toggle.mode-all{border-color:rgba(var(--tint),.25);background:rgba(var(--tint),.08);color:var(--paper);}
+
+/* manga story card badge */
+.story-card-badge{
+  position:absolute;top:9px;left:9px;z-index:4;padding:3px 8px;border-radius:6px;
+  background:rgba(232,128,79,.85);color:#fff;font-size:.65rem;font-weight:700;letter-spacing:.5px;
+  backdrop-filter:blur(4px);
+}
+
+/* manga chapter editor */
+.page-upload-zone{
+  border:2px dashed rgba(var(--tint),.18);border-radius:var(--radius-md);
+  padding:28px 18px;text-align:center;cursor:pointer;color:var(--text-dim);
+  transition:.2s;margin-bottom:16px;
+}
+.page-upload-zone:hover,.page-upload-zone.drag-over{border-color:var(--ember);color:var(--ember);background:rgba(232,128,79,.06);}
+.page-upload-zone .icon{width:2em;height:2em;margin:0 auto 8px;}
+.page-upload-zone p{font-size:.85rem;}
+.page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px;margin-bottom:18px;}
+.page-item{
+  position:relative;border-radius:10px;overflow:hidden;background:var(--night-2);
+  border:1px solid rgba(var(--tint),.08);aspect-ratio:3/4;
+}
+.page-item img{width:100%;height:100%;object-fit:cover;}
+.page-item-num{
+  position:absolute;top:5px;left:5px;background:rgba(0,0,0,.55);color:#fff;
+  font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:5px;font-family:var(--font-display);
+}
+.page-item-del{
+  position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;
+  background:rgba(0,0,0,.55);border:none;color:#fff;display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:.15s;
+}
+.page-item:hover .page-item-del{opacity:1;}
+.page-item-del:hover{background:var(--danger);}
+.page-item-del .icon{width:12px;height:12px;}
+.page-item-handle{
+  position:absolute;bottom:5px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.45);color:#fff;font-size:.6rem;padding:2px 8px;border-radius:5px;
+  cursor:grab;opacity:0;transition:.15s;white-space:nowrap;
+}
+.page-item:hover .page-item-handle{opacity:1;}
+.page-item.drag-target{border:2px solid var(--ember);}
+
+/* manga reader — single page mode */
+.manga-reader{min-height:100vh;background:#111;position:relative;}
+.manga-page-view{
+  position:relative;width:100%;max-width:800px;margin:0 auto;
+  display:flex;align-items:center;justify-content:center;
+  min-height:calc(100vh - 128px);user-select:none;
+}
+.manga-page-view img{
+  display:block;max-width:100%;max-height:calc(100vh - 128px);
+  width:auto;height:auto;object-fit:contain;margin:0 auto;
+}
+.manga-page-view .page-loading{color:#888;font-size:.9rem;padding:60px;}
+.manga-tap-left,.manga-tap-right{
+  position:absolute;top:0;bottom:0;width:50%;z-index:10;cursor:pointer;
+}
+.manga-tap-left{left:0;}
+.manga-tap-right{right:0;}
+
+/* manga reader — scroll mode */
+.manga-scroll-view{max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:3px;padding-bottom:80px;}
+.manga-scroll-view img{display:block;width:100%;height:auto;}
+
+/* manga reader bars */
+.manga-reader .reader-top{background:rgba(10,8,15,.88);}
+.manga-reader .reader-bottom{background:rgba(10,8,15,.88);}
+.manga-reader.bars-hidden .reader-top{transform:translateY(-100%);opacity:0;}
+.manga-reader.bars-hidden .reader-bottom{transform:translateY(100%);opacity:0;}
+.manga-mode-toggle{
+  display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;
+  border:1px solid rgba(var(--tint),.18);background:rgba(var(--tint),.06);color:var(--text-dim);
+  font-size:.8rem;font-weight:600;transition:.15s;
+}
+.manga-mode-toggle:hover{background:rgba(var(--tint),.14);color:var(--paper);}
+.manga-mode-toggle .icon{width:1em;height:1em;}
+.manga-page-counter{
+  font-size:.8rem;color:var(--text-dim2);padding:8px 14px;border-radius:999px;
+  background:rgba(var(--tint),.05);border:1px solid rgba(var(--tint),.10);cursor:pointer;
+}
+.manga-page-counter:hover{background:rgba(var(--tint),.12);color:var(--paper);}
 </style>
 </head>
 <body>
@@ -501,14 +601,11 @@ body.adult-on .blur-badge{display:none;}
 </button>
 
 <nav class="navbar">
-  <a href="#/" class="brand">
+  <a href="#/" class="brand" id="brandLink">
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/></svg>
-    <span>คลังนิยาย<small>พื้นที่เขียนและอ่านนิยาย</small></span>
+    <span>คลังนิยาย<small>นิยาย & มังงะ</small></span>
   </a>
-  <a href="#/" class="nav-link" data-nav="home">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-    <span class="label">รวมเรื่อง</span>
-  </a>
+  <button id="contentModeToggle" class="content-mode-toggle" type="button" aria-label="สลับมุมมองเนื้อหา"></button>
   <button id="themeToggle" class="theme-toggle" type="button" aria-label="สลับโหมดสว่าง/มืด" title="สลับโหมดสว่าง/มืด"></button>
   <button id="adultToggle" class="adult-toggle" type="button" aria-pressed="false">
     <span class="dot"></span><span id="adultToggleLabel">18+ ปิด</span>
@@ -540,7 +637,8 @@ var ICONS = {
   sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
   moon:'<path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/>',
   chevUp:'<path d="M18 15l-6-6-6 6"/>',
-  chevDown:'<path d="M6 9l6 6 6-6"/>'
+  chevDown:'<path d="M6 9l6 6 6-6"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'
 };
 function icon(name){ return '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[name]||'')+'</svg>'; }
 
@@ -810,6 +908,48 @@ function moveChapter(storyId, chapterId, dir){
 }
 
 /* ============================================================
+   EXPORT STORY → JSON FILE (for GitHub Pages hosting)
+   Bundles the story meta and every chapter's full content into
+   a single .json file. Commit to a GitHub repo → enable Pages
+   → load with a static reader that fetches this JSON file.
+============================================================ */
+function exportStory(storyId){
+  getStories().then(function(stories){
+    var story = findStory(stories, storyId);
+    if(!story){ toast('ไม่พบเรื่องนี้', true); return; }
+    toast('กำลังเตรียมไฟล์...');
+    var chapterPromises = (story.chapters||[]).map(function(ch){
+      return getChapterContent(storyId, ch.id).then(function(content){
+        return Object.assign({}, ch, {fullContent: content || null});
+      });
+    });
+    Promise.all(chapterPromises).then(function(chaptersWithContent){
+      var exportData = {
+        exportedAt: new Date().toISOString(),
+        exportVersion: 1,
+        story: Object.assign({}, story, {chapters: chaptersWithContent})
+      };
+      var safeTitle = (story.title || story.id)
+        .replace(/[\s/\\:*?"<>|]+/g,'-')
+        .replace(/^-+|-+$/g,'')
+        .substring(0, 60) || story.id;
+      var filename = 'novel-' + safeTitle + '.json';
+      var blob = new Blob([JSON.stringify(exportData, null, 2)], {type:'application/json'});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = filename; a.style.display='none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 3000);
+      toast('✓ บันทึกไฟล์ '+filename+' แล้ว — นำไปวางใน GitHub repository ได้เลย');
+    }).catch(function(err){
+      console.error('exportStory error', err);
+      toast('เกิดข้อผิดพลาดในการส่งออกข้อมูล', true);
+    });
+  });
+}
+
+/* ============================================================
    GLOBAL STATE
 ============================================================ */
 var appSettings = {adult:false, theme:'dark', fontSize:20, fontFamily:FONT_OPTIONS[0].value, background:{mode:'preset', presetId:1, customSrc:'', customOpacity:0.84}};
@@ -817,6 +957,24 @@ var draftChapter = null;   // {id, storyId, title, cover, content:[...]}
 var draftIsNew = false;
 var draftDirty = false;
 var draftStory = null;     // used inside story create/edit modal
+var draftMangaChapter = null; // {id, storyId, title, pages:[{id,src,name}]}
+
+/* ============================================================
+   MANGA DATA HELPERS
+   Manga series live in the same 'stories' list as novels but
+   have type:'manga'. Chapter content is stored under the key
+   'manga-chapter-{storyId}-{chapterId}' and holds pages array.
+============================================================ */
+function getMangaStories(stories){ return stories.filter(function(s){ return s.type==='manga'; }); }
+function getNovelStories(stories){ return stories.filter(function(s){ return !s.type || s.type==='novel'; }); }
+function mangaChapterKey(storyId, chId){ return 'manga-chapter-'+storyId+'-'+chId; }
+function getMangaChapter(storyId, chId){ return storageGet(mangaChapterKey(storyId, chId), null); }
+function saveMangaChapter(ch){ return storageSet(mangaChapterKey(ch.storyId, ch.id), ch); }
+function deleteMangaChapter(storyId, chId){ return storageDelete(mangaChapterKey(storyId, chId)); }
+function getMangaReadingMode(){ return storageGet('mangaReadMode', 'single'); }
+function setMangaReadingMode(mode){ return storageSet('mangaReadMode', mode); }
+function getContentMode(){ return storageGet('contentMode', 'novel'); }
+function setContentMode(mode){ return storageSet('contentMode', mode); }
 
 /* ============================================================
    MODAL
@@ -1137,6 +1295,10 @@ function parseRoute(){
   var hash = location.hash.replace(/^#\/?/, '');
   var parts = hash.split('/').filter(Boolean).map(decodeURIComponent);
   if(parts.length===0) return {view:'home'};
+  if(parts[0]==='manga' && !parts[1]) return {view:'manga'};
+  if(parts[0]==='manga' && parts[1]) return {view:'manga-detail', storyId:parts[1]};
+  if(parts[0]==='manga-editor' && parts[1] && parts[2]) return {view:'manga-editor', storyId:parts[1], chapterId:parts[2]};
+  if(parts[0]==='manga-read' && parts[1] && parts[2]) return {view:'manga-read', storyId:parts[1], chapterId:parts[2]};
   if(parts[0]==='story' && parts[1]) return {view:'story', storyId:parts[1]};
   if(parts[0]==='editor' && parts[1] && parts[2]) return {view:'editor', storyId:parts[1], chapterId:parts[2]};
   if(parts[0]==='read' && parts[1] && parts[2]) return {view:'read', storyId:parts[1], chapterId:parts[2]};
@@ -1152,10 +1314,29 @@ function render(){
   app.classList.remove('app'); void app.offsetWidth; app.classList.add('app');
 
   var p;
-  if(route.view==='story') p = renderStoryView(app, route.storyId);
+  if(route.view==='manga') p = renderMangaHome(app);
+  else if(route.view==='manga-detail') p = renderMangaDetail(app, route.storyId);
+  else if(route.view==='manga-editor') p = renderMangaEditor(app, route.storyId, route.chapterId);
+  else if(route.view==='manga-read') p = renderMangaReader(app, route.storyId, route.chapterId);
+  else if(route.view==='story') p = renderStoryView(app, route.storyId);
   else if(route.view==='editor') p = renderEditorView(app, route.storyId, route.chapterId);
   else if(route.view==='read') p = renderReadView(app, route.storyId, route.chapterId);
-  else p = renderHomeView(app);
+  else {
+    /* home: respect contentMode setting */
+    p = getContentMode().then(function(mode){
+      if(mode === 'manga') return renderMangaHome(app);
+      if(mode === 'all')   return renderAllHome(app);
+      return renderHomeView(app);
+    });
+  }
+
+  /* update toggle button state from stored mode */
+  var isDetailPage = (route.view==='manga-detail'||route.view==='manga-editor'||route.view==='manga-read'||
+                      route.view==='story'||route.view==='editor'||route.view==='read');
+  if(!isDetailPage){
+    var btn = document.getElementById('contentModeToggle');
+    if(btn) getContentMode().then(function(m){ applyContentModeBtn(btn, m||'novel'); });
+  }
 
   Promise.resolve(p).catch(function(err){
     console.error(err);
@@ -1166,11 +1347,399 @@ function render(){
 window.addEventListener('hashchange', render);
 
 /* ============================================================
+   MANGA VIEWS
+============================================================ */
+
+/* ---- MANGA HOME (collection grid) ---- */
+function renderMangaHome(app){
+  return getStories().then(function(stories){
+    var mangas = getMangaStories(stories).slice().sort(function(a,b){ return (b.updatedAt||b.createdAt)-(a.updatedAt||a.createdAt); });
+    var cards = mangas.map(function(s){
+      var coverHtml = coverImgHtml(s.cover, s.coverCrop, 'image');
+      return (
+        '<div class="story-card">' +
+          '<span class="story-card-badge">MANGA</span>' +
+          '<button class="story-card-del" data-action="delete-story" data-story="'+s.id+'" title="ลบมังงะนี้" aria-label="ลบ">'+icon('trash')+'</button>' +
+          '<button class="story-card-edit" data-action="edit-story" data-story="'+s.id+'" title="แก้ไขข้อมูล" aria-label="แก้ไข">'+icon('pencil')+'</button>' +
+          '<a class="story-card-link" href="#/manga/'+s.id+'">' +
+            '<div class="story-cover-wrap">' +
+              '<div class="preview-blur" style="width:100%;height:100%;">'+coverHtml+'</div>' +
+              '<div class="blur-badge">'+icon('eye')+'<span>18+</span></div>' +
+            '</div>' +
+            '<div class="story-card-body">' +
+              '<div class="story-card-title">'+escapeHtml(s.title)+'</div>' +
+              '<div class="story-card-meta">'+(s.chapters?s.chapters.length:0)+' ตอน</div>' +
+            '</div>' +
+          '</a>' +
+        '</div>'
+      );
+    }).join('');
+    app.innerHTML =
+      '<div class="container">' +
+        '<div class="page-head">' +
+          '<div><h1>คลังมังงะ</h1><p>มังงะทั้งหมดของคุณจะปรากฏที่นี่</p></div>' +
+        '</div>' +
+        '<div class="story-grid">' +
+          '<button class="add-story-card" type="button" data-action="open-new-manga">'+icon('plus')+'<span>เพิ่มมังงะใหม่</span></button>' +
+          cards +
+        '</div>' +
+      '</div>';
+  });
+}
+
+/* ---- MANGA DETAIL (chapter list) ---- */
+function renderMangaDetail(app, storyId){
+  return Promise.all([getStories(), getReadingProgress()]).then(function(res){
+    var stories = res[0], progress = res[1];
+    var story = findStory(stories, storyId);
+    if(!story){ app.innerHTML='<div class="container"><div class="empty-state"><h3>ไม่พบมังงะนี้</h3><a class="btn btn-primary" href="#/manga">กลับ</a></div></div>'; return; }
+    var chapters = story.chapters||[];
+    var resumeId = progress[story.id];
+    var resumeExists = resumeId && chapters.some(function(c){ return c.id===resumeId; });
+    var coverHtml = coverImgHtml(story.cover, story.coverCrop, 'image');
+    var rows = chapters.map(function(ch, idx){
+      var thumbHtml = ch.cover ? coverImgHtml(ch.cover, ch.coverCrop,'image') : coverImgHtml(ch.previewImage,null,'image');
+      var meta = ['อัปเดต '+formatDateTime(ch.updatedAt||ch.createdAt)];
+      if(ch.pageCount) meta.push(ch.pageCount+' หน้า');
+      return (
+        '<div class="chapter-row" data-action="goto-manga-read" data-story="'+story.id+'" data-chapter="'+ch.id+'">' +
+          '<div class="chapter-num">'+(idx+1)+'</div>' +
+          '<div class="chapter-thumb preview-blur">'+thumbHtml+'</div>' +
+          '<div class="chapter-row-title"><strong>'+escapeHtml(ch.title)+'</strong><span>'+meta.join(' · ')+'</span></div>' +
+          '<span class="chapter-leader"></span>' +
+          '<div class="chapter-row-actions">' +
+            '<button class="btn-icon" data-action="move-chapter-up" data-story="'+story.id+'" data-chapter="'+ch.id+'" '+(idx===0?'disabled':'')+'>'+icon('chevUp')+'</button>' +
+            '<button class="btn-icon" data-action="move-chapter-down" data-story="'+story.id+'" data-chapter="'+ch.id+'" '+(idx===chapters.length-1?'disabled':'')+'>'+icon('chevDown')+'</button>' +
+            '<button class="btn-icon" data-action="goto-manga-edit" data-story="'+story.id+'" data-chapter="'+ch.id+'">'+icon('pencil')+'</button>' +
+            '<button class="btn-icon" data-action="delete-manga-chapter" data-story="'+story.id+'" data-chapter="'+ch.id+'">'+icon('trash')+'</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+    app.innerHTML =
+      '<div class="container">' +
+        '<a href="#/manga" class="nav-link" style="display:inline-flex;margin-bottom:18px;">'+icon('back')+'<span class="label">คลังมังงะ</span></a>' +
+        '<div class="story-head">' +
+          '<div class="story-head-cover"><div class="preview-blur" style="width:100%;height:100%;position:relative;">'+coverHtml+'<div class="blur-badge">'+icon('eye')+'<span>18+</span></div></div></div>' +
+          '<div class="story-head-info">' +
+            '<h1>'+escapeHtml(story.title)+'</h1>' +
+            '<div class="story-head-stats"><span><b>'+chapters.length+'</b> ตอน</span><span>สร้างเมื่อ '+formatDateTime(story.createdAt)+'</span><span>อัปเดตล่าสุด '+formatDateTime(story.updatedAt||story.createdAt)+'</span></div>' +
+            '<p class="story-head-desc">'+escapeHtml(story.description||'ยังไม่มีเรื่องย่อ')+'</p>' +
+            '<div class="story-head-actions">' +
+              '<button class="btn btn-primary" data-action="new-manga-chapter" data-story="'+story.id+'">'+icon('plus')+' เพิ่มตอนใหม่</button>' +
+              (resumeExists?'<a class="btn btn-primary" href="#/manga-read/'+story.id+'/'+resumeId+'">'+icon('bookOpen')+' อ่านต่อ</a>':'') +
+              (chapters.length?'<a class="btn btn-ghost" href="#/manga-read/'+story.id+'/'+chapters[chapters.length-1].id+'">'+icon('chevRight')+' ตอนล่าสุด</a>':'') +
+              (chapters.length?'<a class="btn btn-ghost" href="#/manga-read/'+story.id+'/'+chapters[0].id+'">'+icon('eye')+' เริ่มอ่าน</a>':'') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        (chapters.length===0?'<div class="empty-state">'+icon('image')+'<h3>ยังไม่มีตอน</h3><p>เพิ่มตอนแรกแล้วอัปโหลดหน้ามังงะได้เลย</p><button class="btn btn-primary" data-action="new-manga-chapter" data-story="'+story.id+'">'+icon('plus')+' เพิ่มตอนใหม่</button></div>':'<div class="chapter-list">'+rows+'</div>') +
+      '</div>' +
+      '<button class="fab-export" id="fabExport" data-story-id="'+story.id+'" type="button">'+icon('download')+' บันทึกไฟล์ GitHub</button>';
+    qs('#fabExport').addEventListener('click', function(){ exportStory(story.id); });
+  });
+}
+
+/* ---- MANGA EDITOR (upload & reorder pages) ---- */
+function renderMangaEditor(app, storyId, chapterId){
+  return getStories().then(function(stories){
+    var story = findStory(stories, storyId);
+    if(!story){ app.innerHTML='<div class="container"><div class="empty-state"><h3>ไม่พบมังงะนี้</h3><a class="btn btn-primary" href="#/manga">กลับ</a></div></div>'; return; }
+    var isNew = chapterId==='new';
+    var loadP = isNew ? Promise.resolve({id:null,storyId:story.id,title:'',cover:'',coverCrop:null,pages:[]}) :
+      getMangaChapter(storyId, chapterId).then(function(ch){ return ch||{id:chapterId,storyId:story.id,title:'',cover:'',coverCrop:null,pages:[]}; });
+    return loadP.then(function(ch){
+      draftMangaChapter = ch;
+      draftDirty = false;
+      app.innerHTML =
+        '<div class="container-narrow">' +
+          '<div class="editor-topbar">' +
+            '<a href="#/manga/'+story.id+'" class="btn btn-icon" aria-label="กลับ">'+icon('back')+'</a>' +
+            '<h2 style="font-size:1.1rem;color:var(--paper);">'+(isNew?'เพิ่มตอนใหม่':'แก้ไขตอน')+' — '+escapeHtml(story.title)+'</h2>' +
+            '<div class="spacer"></div>' +
+            (isNew?'':'<a class="btn btn-ghost btn-sm" href="#/manga-read/'+story.id+'/'+ch.id+'">'+icon('eye')+' อ่าน</a>') +
+          '</div>' +
+          '<div class="field"><label>ชื่อตอน</label><input class="input" id="mangaChTitle" placeholder="เช่น ตอนที่ 1" value="'+escapeAttr(ch.title)+'"></div>' +
+          '<div class="field"><label>ภาพปกตอน (1:1)</label>' +
+            '<div class="cover-picker">' +
+              '<div class="cover-preview is-square" id="mangaChCoverPreview">'+coverImgHtml(ch.cover, ch.coverCrop,'image')+'</div>' +
+              '<div class="cover-actions">' +
+                '<button type="button" class="btn btn-ghost btn-sm" id="mangaChCoverPick">'+icon('image')+' เลือก/ครอบรูปภาพ</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" id="mangaChCoverRemove">'+icon('x')+' ลบ</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="field">' +
+            '<label>หน้ามังงะ <span style="color:var(--text-dim2);font-weight:400;">'+escapeHtml(ch.pages?ch.pages.length:0)+' หน้า</span></label>' +
+            '<div class="page-upload-zone" id="mangaUploadZone" role="button" tabindex="0">' +
+              icon('image') +
+              '<p>คลิกเพื่ออัปโหลด หรือลาก&วางไฟล์ภาพมาที่นี่</p>' +
+              '<p style="font-size:.75rem;margin-top:4px;">.jpg .png .gif .webp — อัปโหลดได้ครั้งละหลายไฟล์ จะเรียงตามชื่อไฟล์</p>' +
+              '<input type="file" id="mangaFileInput" accept="image/*,.gif" multiple style="display:none;">' +
+            '</div>' +
+            '<div class="page-grid" id="mangaPageGrid"></div>' +
+          '</div>' +
+        '</div>' +
+        '<button class="fab-save" id="fabMangaSave" type="button">'+icon('check')+'<span class="dirty-dot"></span><span>บันทึก</span></button>';
+
+      renderMangaPageGrid();
+      wireMangaEditorEvents(story);
+    });
+  });
+}
+
+function renderMangaPageGrid(){
+  var grid = document.getElementById('mangaPageGrid');
+  if(!grid||!draftMangaChapter) return;
+  if(!draftMangaChapter.pages||!draftMangaChapter.pages.length){ grid.innerHTML=''; return; }
+  grid.innerHTML = draftMangaChapter.pages.map(function(p, i){
+    return (
+      '<div class="page-item" data-page-id="'+p.id+'" draggable="true">' +
+        '<img src="'+escapeAttr(p.src)+'" alt="" loading="lazy">' +
+        '<span class="page-item-num">'+(i+1)+'</span>' +
+        '<button type="button" class="page-item-del" data-action="delete-page" data-page-id="'+p.id+'" aria-label="ลบหน้านี้">'+icon('trash')+'</button>' +
+        '<span class="page-item-handle">⠿ ลาก</span>' +
+      '</div>'
+    );
+  }).join('');
+  initMangaPageDragDrop();
+}
+
+function initMangaPageDragDrop(){
+  var grid = document.getElementById('mangaPageGrid');
+  if(!grid) return;
+  var draggingId = null;
+  qsa('.page-item', grid).forEach(function(item){
+    item.addEventListener('dragstart', function(e){ draggingId = item.getAttribute('data-page-id'); e.dataTransfer.effectAllowed='move'; item.style.opacity='.4'; });
+    item.addEventListener('dragend', function(){ item.style.opacity=''; draggingId=null; qsa('.page-item',grid).forEach(function(i){ i.classList.remove('drag-target'); }); });
+    item.addEventListener('dragover', function(e){ e.preventDefault(); if(item.getAttribute('data-page-id')!==draggingId) item.classList.add('drag-target'); });
+    item.addEventListener('dragleave', function(){ item.classList.remove('drag-target'); });
+    item.addEventListener('drop', function(e){
+      e.preventDefault(); item.classList.remove('drag-target');
+      if(!draggingId||item.getAttribute('data-page-id')===draggingId) return;
+      var pages = draftMangaChapter.pages;
+      var fromIdx = pages.findIndex(function(p){ return p.id===draggingId; });
+      var toIdx = pages.findIndex(function(p){ return p.id===item.getAttribute('data-page-id'); });
+      if(fromIdx<0||toIdx<0) return;
+      var removed = pages.splice(fromIdx,1)[0];
+      pages.splice(toIdx,0,removed);
+      renderMangaPageGrid();
+      markDirty();
+    });
+  });
+}
+
+function wireMangaEditorEvents(story){
+  qs('#mangaChTitle').addEventListener('input', function(e){ draftMangaChapter.title=e.target.value; markDirty(); });
+  qs('#mangaChCoverPick').addEventListener('click', function(){
+    pickImageModal({ratio:1}).then(function(r){ if(!r)return; draftMangaChapter.cover=r.src; draftMangaChapter.coverCrop=r.crop; qs('#mangaChCoverPreview').innerHTML=coverImgHtml(r.src,r.crop,'image'); markDirty(); });
+  });
+  qs('#mangaChCoverRemove').addEventListener('click', function(){ draftMangaChapter.cover=''; draftMangaChapter.coverCrop=null; qs('#mangaChCoverPreview').innerHTML=icon('image'); markDirty(); });
+
+  var zone = qs('#mangaUploadZone');
+  var fileInput = qs('#mangaFileInput');
+  zone.addEventListener('click', function(e){ if(e.target!==fileInput) fileInput.click(); });
+  zone.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' ') fileInput.click(); });
+  zone.addEventListener('dragover', function(e){ e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', function(){ zone.classList.remove('drag-over'); });
+  zone.addEventListener('drop', function(e){ e.preventDefault(); zone.classList.remove('drag-over'); handleMangaFiles(e.dataTransfer.files); });
+  fileInput.addEventListener('change', function(){ handleMangaFiles(fileInput.files); fileInput.value=''; });
+
+  var grid = document.getElementById('mangaPageGrid');
+  grid.addEventListener('click', function(e){
+    var delBtn = e.target.closest('[data-action="delete-page"]');
+    if(!delBtn) return;
+    var pid = delBtn.getAttribute('data-page-id');
+    draftMangaChapter.pages = draftMangaChapter.pages.filter(function(p){ return p.id!==pid; });
+    renderMangaPageGrid();
+    markDirty();
+  });
+
+  qs('#fabMangaSave').addEventListener('click', function(){ saveMangaDraftChapter(story); });
+  currentCleanup = function(){ draftMangaChapter=null; };
+}
+
+function handleMangaFiles(fileList){
+  if(!fileList||!fileList.length) return;
+  var files = Array.prototype.slice.call(fileList).filter(function(f){ return f.type.startsWith('image/'); });
+  files.sort(function(a,b){ return a.name.localeCompare(b.name, undefined, {numeric:true}); });
+  if(!files.length){ toast('ไม่พบไฟล์ภาพที่รองรับ (jpg, png, gif, webp)', true); return; }
+  toast('กำลังโหลด '+files.length+' หน้า...');
+  var promises = files.map(function(f){
+    return new Promise(function(resolve){
+      if(f.type==='image/gif'){
+        var fr = new FileReader();
+        fr.onload = function(e){ resolve({id:genId(), src:e.target.result, name:f.name}); };
+        fr.onerror = function(){ resolve(null); };
+        fr.readAsDataURL(f);
+      } else {
+        compressImage(f, 1800, 0.88).then(function(dataUrl){ resolve({id:genId(), src:dataUrl, name:f.name}); }).catch(function(){ resolve(null); });
+      }
+    });
+  });
+  Promise.all(promises).then(function(results){
+    results.filter(Boolean).forEach(function(p){ draftMangaChapter.pages.push(p); });
+    renderMangaPageGrid();
+    markDirty();
+    toast('✓ โหลด '+results.filter(Boolean).length+' หน้าเรียบร้อย');
+  });
+}
+
+function saveMangaDraftChapter(story){
+  var title = (qs('#mangaChTitle').value||'').trim();
+  if(!title){ toast('กรุณาใส่ชื่อตอน', true); return; }
+  if(!draftMangaChapter.pages||!draftMangaChapter.pages.length){ toast('กรุณาเพิ่มหน้ามังงะอย่างน้อย 1 หน้า', true); return; }
+  draftMangaChapter.title = title;
+  var now = Date.now();
+  if(!draftMangaChapter.id){ draftMangaChapter.id=genId(); draftMangaChapter.createdAt=now; }
+  draftMangaChapter.updatedAt = now;
+  var fab = qs('#fabMangaSave');
+  if(fab){ fab.disabled=true; fab.querySelector('span:last-child').textContent='กำลังบันทึก...'; }
+  saveMangaChapter(draftMangaChapter).then(function(){
+    return getStories().then(function(stories){
+      var s = findStory(stories, story.id);
+      if(!s) return;
+      var meta = findChapterMeta(s, draftMangaChapter.id);
+      var preview = draftMangaChapter.pages.length ? draftMangaChapter.pages[0].src : '';
+      if(meta){
+        meta.title=draftMangaChapter.title; meta.cover=draftMangaChapter.cover; meta.coverCrop=draftMangaChapter.coverCrop;
+        meta.previewImage=preview; meta.pageCount=draftMangaChapter.pages.length; meta.updatedAt=now;
+      } else {
+        s.chapters.push({id:draftMangaChapter.id, title:draftMangaChapter.title, cover:draftMangaChapter.cover, coverCrop:draftMangaChapter.coverCrop,
+          previewImage:preview, pageCount:draftMangaChapter.pages.length, createdAt:now, updatedAt:now});
+      }
+      s.updatedAt=now;
+      return saveStories(stories);
+    });
+  }).then(function(){
+    draftDirty=false; toast('บันทึกตอนแล้ว'); navigate('#/manga/'+story.id);
+  });
+}
+
+/* ---- MANGA READER ---- */
+function renderMangaReader(app, storyId, chapterId){
+  return Promise.all([getStories(), getMangaReadingMode()]).then(function(res){
+    var stories=res[0], readMode=res[1]||'single';
+    var story = findStory(stories, storyId);
+    if(!story){ app.innerHTML='<div class="container"><div class="empty-state"><h3>ไม่พบมังงะ</h3><a class="btn btn-primary" href="#/manga">กลับ</a></div></div>'; return; }
+    var chapters = story.chapters||[];
+    var idx=-1; for(var i=0;i<chapters.length;i++){ if(chapters[i].id===chapterId){ idx=i; break; } }
+    if(idx===-1){ app.innerHTML='<div class="container"><div class="empty-state"><h3>ไม่พบตอนนี้</h3><a class="btn btn-primary" href="#/manga/'+story.id+'">กลับ</a></div></div>'; return; }
+    var prevCh=chapters[idx-1]||null, nextCh=chapters[idx+1]||null;
+    return getMangaChapter(storyId, chapterId).then(function(ch){
+      if(!ch||!ch.pages||!ch.pages.length){
+        app.innerHTML='<div class="container"><div class="empty-state"><h3>ตอนนี้ยังไม่มีหน้ามังงะ</h3><a class="btn btn-primary" href="#/manga-editor/'+story.id+'/'+chapterId+'">เพิ่มหน้ามังงะ</a></div></div>';
+        return;
+      }
+      markChapterRead(story.id, ch.id);
+      var pages = ch.pages;
+      var curPage = 0;
+      var modeIcon = readMode==='single' ? icon('chevDown') : icon('chevRight');
+      var modeLabel = readMode==='single' ? 'โหมดเลื่อนอ่าน' : 'โหมดหน้าเดียว';
+
+      function buildSinglePage(){
+        return (
+          '<div class="manga-page-view" id="mangaPageView">' +
+            '<img id="mangaPageImg" src="'+escapeAttr(pages[curPage].src)+'" alt="หน้า '+(curPage+1)+'">' +
+            '<div class="manga-tap-left" id="tapLeft"></div>' +
+            '<div class="manga-tap-right" id="tapRight"></div>' +
+          '</div>'
+        );
+      }
+      function buildScrollView(){
+        return '<div class="manga-scroll-view" id="mangaScrollView">' +
+          pages.map(function(p,i){ return '<img src="'+escapeAttr(p.src)+'" alt="หน้า '+(i+1)+'" loading="lazy">'; }).join('') +
+        '</div>';
+      }
+
+      app.innerHTML =
+        '<div class="manga-reader" id="mangaReaderRoot">' +
+          '<header class="reader-top" id="readerTop">' +
+            '<a class="btn btn-icon" href="#/manga/'+story.id+'" aria-label="กลับ">'+icon('back')+'</a>' +
+            '<div class="reader-titles">' +
+              '<span class="reader-story-title">'+escapeHtml(story.title)+'</span>' +
+              '<span class="reader-chapter-title">'+escapeHtml(ch.title)+'</span>' +
+            '</div>' +
+            '<button type="button" class="manga-mode-toggle" id="mangaModeToggle">'+modeIcon+'<span>'+modeLabel+'</span></button>' +
+          '</header>' +
+          '<div id="mangaContent">' + (readMode==='single' ? buildSinglePage() : buildScrollView()) + '</div>' +
+          '<footer class="reader-bottom" id="readerBottom">' +
+            '<button class="btn btn-ghost nav-chap" id="prevChBtn" '+(prevCh?'':'disabled')+'>'+icon('chevLeft')+'<span>ตอนที่แล้ว</span></button>' +
+            '<button type="button" class="manga-page-counter" id="mangaPageCounter">'+(readMode==='single'?'หน้า 1 / '+pages.length:'ทั้งหมด '+pages.length+' หน้า')+'</button>' +
+            '<button class="btn btn-primary nav-chap" id="nextChBtn" '+(nextCh?'':'disabled')+'><span>ตอนต่อไป</span>'+icon('chevRight')+'</button>' +
+          '</footer>' +
+        '</div>';
+
+      wireMangaReaderEvents(story, ch, pages, prevCh, nextCh, readMode, curPage);
+    });
+  });
+}
+
+function wireMangaReaderEvents(story, ch, pages, prevCh, nextCh, readMode, curPage){
+  var root = qs('#mangaReaderRoot');
+  var counter = qs('#mangaPageCounter');
+
+  /* hide/show bars on scroll or tap */
+  function isAtBottom(){ return window.innerHeight+window.scrollY >= document.body.scrollHeight-60; }
+  function onScroll(){ if(isAtBottom()){ root.classList.remove('bars-hidden'); return; } root.classList.add('bars-hidden'); }
+  window.addEventListener('scroll', onScroll, {passive:true});
+
+  /* mode toggle */
+  qs('#mangaModeToggle').addEventListener('click', function(){
+    var newMode = readMode==='single'?'scroll':'single';
+    setMangaReadingMode(newMode);
+    navigate('#/manga-read/'+story.id+'/'+ch.id);
+  });
+
+  if(prevCh) qs('#prevChBtn').addEventListener('click', function(){ navigate('#/manga-read/'+story.id+'/'+prevCh.id); });
+  if(nextCh) qs('#nextChBtn').addEventListener('click', function(){ navigate('#/manga-read/'+story.id+'/'+nextCh.id); });
+
+  if(readMode==='single'){
+    function goPage(n){
+      n = Math.max(0, Math.min(pages.length-1, n));
+      curPage = n;
+      var img = qs('#mangaPageImg');
+      if(img) img.src = pages[curPage].src;
+      if(counter) counter.textContent = 'หน้า '+(curPage+1)+' / '+pages.length;
+      if(curPage===pages.length-1){ root.classList.remove('bars-hidden'); }
+    }
+    var tapLeft = qs('#tapLeft'), tapRight = qs('#tapRight');
+    if(tapLeft) tapLeft.addEventListener('click', function(){ if(curPage===0){ root.classList.toggle('bars-hidden'); } else goPage(curPage-1); });
+    if(tapRight) tapRight.addEventListener('click', function(){ if(curPage===pages.length-1){ root.classList.remove('bars-hidden'); if(nextCh) navigate('#/manga-read/'+story.id+'/'+nextCh.id); } else goPage(curPage+1); });
+    /* keyboard */
+    function onKey(e){ if(e.key==='ArrowRight'||e.key==='ArrowDown') goPage(curPage+1); if(e.key==='ArrowLeft'||e.key==='ArrowUp') goPage(curPage-1); }
+    document.addEventListener('keydown', onKey);
+    currentCleanup = function(){ window.removeEventListener('scroll', onScroll); document.removeEventListener('keydown', onKey); };
+  } else {
+    /* scroll mode — bar toggle on tap */
+    qs('#mangaContent').addEventListener('click', function(e){ if(e.target.closest('a,button')) return; root.classList.toggle('bars-hidden'); });
+    currentCleanup = function(){ window.removeEventListener('scroll', onScroll); };
+  }
+}
+
+/* delegated actions for manga views */
+document.addEventListener('click', function(e){
+  var t;
+  if((t=e.target.closest('[data-action="open-new-manga"]'))){ openStoryModal(null, true); return; }
+  if((t=e.target.closest('[data-action="new-manga-chapter"]'))){ e.preventDefault(); navigate('#/manga-editor/'+t.getAttribute('data-story')+'/new'); return; }
+  if((t=e.target.closest('[data-action="goto-manga-edit"]'))){ e.preventDefault(); e.stopPropagation(); navigate('#/manga-editor/'+t.getAttribute('data-story')+'/'+t.getAttribute('data-chapter')); return; }
+  if((t=e.target.closest('[data-action="goto-manga-read"]'))){ if(e.target.closest('.chapter-row-actions')) return; navigate('#/manga-read/'+t.getAttribute('data-story')+'/'+t.getAttribute('data-chapter')); return; }
+  if((t=e.target.closest('[data-action="delete-manga-chapter"]'))){ e.preventDefault(); e.stopPropagation();
+    var sId=t.getAttribute('data-story'), cId=t.getAttribute('data-chapter');
+    confirmDialog('ลบตอนนี้พร้อมหน้ามังงะทั้งหมด?','ลบตอนนี้').then(function(ok){
+      if(!ok) return;
+      getStories().then(function(stories){ var s=findStory(stories,sId); if(!s) return; s.chapters=s.chapters.filter(function(c){return c.id!==cId;}); s.updatedAt=Date.now(); deleteMangaChapter(sId,cId).then(function(){ return saveStories(stories); }).then(function(){ toast('ลบตอนแล้ว'); render(); }); });
+    });
+    return;
+  }
+});
+
+/* ============================================================
    VIEW: HOME (story collection / management)
 ============================================================ */
 function renderHomeView(app){
   return getStories().then(function(stories){
-    stories = stories.slice().sort(function(a,b){ return (b.updatedAt||b.createdAt) - (a.updatedAt||a.createdAt); });
+    stories = getNovelStories(stories).slice().sort(function(a,b){ return (b.updatedAt||b.createdAt) - (a.updatedAt||a.createdAt); });
     var cards = stories.map(function(s){
       var coverHtml = coverImgHtml(s.cover, s.coverCrop, 'book');
       return (
@@ -1206,13 +1775,81 @@ function renderHomeView(app){
   });
 }
 
-/* story create/edit modal */
-function openStoryModal(existing){
-  draftStory = existing ? JSON.parse(JSON.stringify(existing)) : {id:null, title:'', description:'', cover:'', coverCrop:null, chapters:[]};
+/* Combined view — shows novels then manga, each with their own "add" button */
+function renderAllHome(app){
+  return getStories().then(function(stories){
+    var novels = getNovelStories(stories).slice().sort(function(a,b){ return (b.updatedAt||b.createdAt)-(a.updatedAt||a.createdAt); });
+    var mangas = getMangaStories(stories).slice().sort(function(a,b){ return (b.updatedAt||b.createdAt)-(a.updatedAt||a.createdAt); });
+
+    function novelCards(){
+      return novels.map(function(s){
+        var coverHtml = coverImgHtml(s.cover, s.coverCrop, 'book');
+        return (
+          '<div class="story-card">'+
+            '<button class="story-card-del" data-action="delete-story" data-story="'+s.id+'" aria-label="ลบ">'+icon('trash')+'</button>'+
+            '<button class="story-card-edit" data-action="edit-story" data-story="'+s.id+'" aria-label="แก้ไข">'+icon('pencil')+'</button>'+
+            '<a class="story-card-link" href="#/story/'+s.id+'">'+
+              '<div class="story-cover-wrap">'+
+                '<div class="preview-blur" style="width:100%;height:100%;">'+coverHtml+'</div>'+
+                '<div class="blur-badge">'+icon('eye')+'<span>18+</span></div>'+
+              '</div>'+
+              '<div class="story-card-body">'+
+                '<div class="story-card-title">'+escapeHtml(s.title)+'</div>'+
+                '<div class="story-card-meta">'+(s.chapters?s.chapters.length:0)+' ตอน</div>'+
+              '</div>'+
+            '</a>'+
+          '</div>'
+        );
+      }).join('');
+    }
+    function mangaCards(){
+      return mangas.map(function(s){
+        var coverHtml = coverImgHtml(s.cover, s.coverCrop, 'image');
+        return (
+          '<div class="story-card">'+
+            '<span class="story-card-badge">MANGA</span>'+
+            '<button class="story-card-del" data-action="delete-story" data-story="'+s.id+'" aria-label="ลบ">'+icon('trash')+'</button>'+
+            '<button class="story-card-edit" data-action="edit-story" data-story="'+s.id+'" aria-label="แก้ไข">'+icon('pencil')+'</button>'+
+            '<a class="story-card-link" href="#/manga/'+s.id+'">'+
+              '<div class="story-cover-wrap">'+
+                '<div class="preview-blur" style="width:100%;height:100%;">'+coverHtml+'</div>'+
+                '<div class="blur-badge">'+icon('eye')+'<span>18+</span></div>'+
+              '</div>'+
+              '<div class="story-card-body">'+
+                '<div class="story-card-title">'+escapeHtml(s.title)+'</div>'+
+                '<div class="story-card-meta">'+(s.chapters?s.chapters.length:0)+' ตอน</div>'+
+              '</div>'+
+            '</a>'+
+          '</div>'
+        );
+      }).join('');
+    }
+
+    app.innerHTML =
+      '<div class="container">'+
+        '<div class="page-head"><div><h1>ทั้งหมด</h1><p>นิยายและมังงะทั้งหมดของคุณ</p></div></div>'+
+        '<h2 style="font-size:1rem;color:var(--text-dim);margin-bottom:14px;font-weight:600;">'+icon('book')+' นิยาย</h2>'+
+        '<div class="story-grid" style="margin-bottom:36px;">'+
+          '<button class="add-story-card" type="button" data-action="open-new-story">'+icon('plus')+'<span>เพิ่มนิยาย</span></button>'+
+          novelCards()+
+        '</div>'+
+        '<h2 style="font-size:1rem;color:var(--text-dim);margin-bottom:14px;font-weight:600;display:flex;align-items:center;gap:6px;">'+
+          '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="9" height="18" rx="1.5"/><rect x="13" y="3" width="9" height="18" rx="1.5"/></svg> มังงะ'+
+        '</h2>'+
+        '<div class="story-grid">'+
+          '<button class="add-story-card" type="button" data-action="open-new-manga">'+icon('plus')+'<span>เพิ่มมังงะ</span></button>'+
+          mangaCards()+
+        '</div>'+
+      '</div>';
+  });
+}
+function openStoryModal(existing, isManga){
+  isManga = !!(isManga || (existing && existing.type==='manga'));
+  draftStory = existing ? JSON.parse(JSON.stringify(existing)) : {id:null, type:(isManga?'manga':'novel'), title:'', description:'', cover:'', coverCrop:null, chapters:[]};
   var isEdit = !!existing;
   var host = openModal(
     '<div class="modal-card" style="max-width:480px;">' +
-      '<h3>'+(isEdit?'แก้ไขข้อมูลเรื่อง':'เพิ่มเรื่องใหม่')+'</h3>' +
+      '<h3>'+(isEdit?(isManga?'แก้ไขข้อมูลมังงะ':'แก้ไขข้อมูลเรื่อง'):(isManga?'เพิ่มมังงะใหม่':'เพิ่มเรื่องใหม่'))+'</h3>' +
       '<div class="field">' +
         '<label>ภาพหน้าปก (อัตราส่วน 3:4)</label>' +
         '<div class="cover-picker">' +
@@ -1273,8 +1910,10 @@ function openStoryModal(existing){
       return saveStories(stories).then(function(ok){
         if(ok){
           closeModal();
-          toast(isEdit ? 'แก้ไขข้อมูลเรื่องแล้ว' : 'เพิ่มเรื่องใหม่แล้ว');
-          if(parseRoute().view==='home') render(); else navigate('#/');
+          toast(isEdit ? 'แก้ไขข้อมูลแล้ว' : (isManga ? 'เพิ่มมังงะใหม่แล้ว' : 'เพิ่มเรื่องใหม่แล้ว'));
+          var currentView = parseRoute().view;
+          if(isManga){ if(currentView==='manga') render(); else navigate('#/manga'); }
+          else { if(currentView==='home') render(); else navigate('#/'); }
         }
       });
     });
@@ -1347,9 +1986,13 @@ function renderStoryView(app, storyId){
           : '<div class="chapter-list">'+rows+'</div>'
         ) +
       '</div>' +
-      '<div class="chapter-preview-pop" id="chapterPreviewPop"><img id="chapterPreviewImg" src="" alt=""></div>';
+      '<div class="chapter-preview-pop" id="chapterPreviewPop"><img id="chapterPreviewImg" src="" alt=""></div>' +
+      '<button class="fab-export" id="fabExport" data-story-id="'+story.id+'" type="button">'+icon('download')+' บันทึกไฟล์ GitHub</button>';
 
     setupChapterHoverPreview(app, previewMap);
+    qs('#fabExport').addEventListener('click', function(){
+      exportStory(story.id);
+    });
   });
 }
 
@@ -1807,13 +2450,17 @@ document.addEventListener('click', function(e){
       if(!ok) return;
       getStories().then(function(stories){
         var s = findStory(stories, storyId);
+        var isMangaStory = s && s.type === 'manga';
         var remaining = stories.filter(function(x){ return x.id!==storyId; });
-        var delChapters = (s && s.chapters || []).map(function(c){ return deleteChapterContent(storyId, c.id); });
+        var delChapters = (s && s.chapters || []).map(function(c){
+          return isMangaStory ? deleteMangaChapter(storyId, c.id) : deleteChapterContent(storyId, c.id);
+        });
         Promise.all(delChapters).then(function(){
           return saveStories(remaining);
         }).then(function(){
           toast('ลบเรื่องแล้ว');
-          render();
+          if(isMangaStory) navigate('#/manga');
+          else render();
         });
       });
     });
@@ -1911,7 +2558,7 @@ function initThemeToggle(){
     appSettings.theme = (appSettings.theme === 'light') ? 'dark' : 'light';
     applyState();
     saveSettingsData(appSettings);
-    applyBackground();
+    applyBackground();   /* re-apply because preset gradients differ per theme */
   });
 }
 
@@ -1919,26 +2566,41 @@ function initThemeToggle(){
    CUSTOM PAGE BACKGROUND
 ============================================================ */
 var BG_PRESETS = [
-  {id:1, name:'ค่ำคืนเอมเบอร์', swatch:'radial-gradient(circle at 30% 25%, rgba(232,128,79,.75), transparent 60%), radial-gradient(circle at 78% 75%, rgba(120,70,160,.7), transparent 60%), #15101d'},
-  {id:2, name:'ห้องสมุดอบอุ่น', swatch:'radial-gradient(circle at 30% 25%, rgba(196,140,60,.8), transparent 60%), radial-gradient(circle at 78% 75%, rgba(110,70,30,.7), transparent 60%), #1d160e'},
-  {id:3, name:'ป่าหมอกราตรี', swatch:'radial-gradient(circle at 30% 25%, rgba(46,143,130,.75), transparent 60%), radial-gradient(circle at 78% 75%, rgba(58,110,168,.7), transparent 60%), #0e1718'}
+  {id:1, name:'ค่ำคืนเอมเบอร์',
+   darkBg: 'radial-gradient(ellipse 900px 500px at 12% -10%, rgba(232,128,79,.18), transparent 60%), radial-gradient(ellipse 700px 500px at 100% 0%, rgba(217,182,106,.12), transparent 55%), radial-gradient(ellipse 1000px 700px at 50% 110%, rgba(120,70,160,.16), transparent 60%), #15101d',
+   lightBg:'radial-gradient(ellipse 900px 500px at 12% -10%, rgba(232,128,79,.12), transparent 60%), radial-gradient(ellipse 700px 500px at 100% 0%, rgba(217,182,106,.10), transparent 55%), radial-gradient(ellipse 1000px 700px at 50% 110%, rgba(120,70,160,.07), transparent 60%), #fbf6ec',
+   swatch:'radial-gradient(circle at 30% 25%, rgba(232,128,79,.75), transparent 60%), radial-gradient(circle at 78% 75%, rgba(120,70,160,.7), transparent 60%), #15101d'},
+  {id:2, name:'ห้องสมุดอบอุ่น',
+   darkBg: 'radial-gradient(ellipse 900px 500px at 12% -10%, rgba(196,140,60,.22), transparent 60%), radial-gradient(ellipse 700px 500px at 100% 0%, rgba(168,122,46,.13), transparent 55%), radial-gradient(ellipse 1000px 700px at 50% 110%, rgba(110,70,30,.18), transparent 60%), #1d160e',
+   lightBg:'radial-gradient(ellipse 900px 500px at 12% -10%, rgba(196,140,60,.13), transparent 60%), radial-gradient(ellipse 700px 500px at 100% 0%, rgba(168,122,46,.09), transparent 55%), radial-gradient(ellipse 1000px 700px at 50% 110%, rgba(110,70,30,.08), transparent 60%), #fdf8ee',
+   swatch:'radial-gradient(circle at 30% 25%, rgba(196,140,60,.8), transparent 60%), radial-gradient(circle at 78% 75%, rgba(110,70,30,.7), transparent 60%), #1d160e'},
+  {id:3, name:'ป่าหมอกราตรี',
+   darkBg: 'radial-gradient(ellipse 900px 500px at 12% -10%, rgba(46,143,130,.20), transparent 60%), radial-gradient(ellipse 700px 500px at 100% 0%, rgba(58,110,168,.13), transparent 55%), radial-gradient(ellipse 1000px 700px at 50% 110%, rgba(30,90,70,.18), transparent 60%), #0e1718',
+   lightBg:'radial-gradient(ellipse 900px 500px at 12% -10%, rgba(46,143,130,.11), transparent 60%), radial-gradient(ellipse 700px 500px at 100% 0%, rgba(58,110,168,.08), transparent 55%), radial-gradient(ellipse 1000px 700px at 50% 110%, rgba(30,90,70,.08), transparent 60%), #eff7f6',
+   swatch:'radial-gradient(circle at 30% 25%, rgba(46,143,130,.75), transparent 60%), radial-gradient(circle at 78% 75%, rgba(58,110,168,.7), transparent 60%), #0e1718'}
 ];
 function getBackgroundSettings(){
   return appSettings.background || {mode:'preset', presetId:1, customSrc:'', customOpacity:0.84};
 }
 function applyBackground(){
   var bg = getBackgroundSettings();
-  document.body.classList.remove('bg-preset-2','bg-preset-3','bg-custom');
+  var isLight = appSettings.theme === 'light';
   var photoLayer = document.getElementById('bgPhotoLayer');
   var scrim = document.getElementById('bgScrim');
+  document.body.classList.remove('bg-custom');
   if(bg.mode === 'custom' && bg.customSrc){
+    /* custom photo: clear gradient override, let CSS handle it, show the layers */
+    document.body.style.background = '';
     document.body.classList.add('bg-custom');
-    photoLayer.style.backgroundImage = 'url("'+bg.customSrc.replace(/"/g,'%22')+'")';
-    scrim.style.background = 'rgba(var(--night-rgb),'+(bg.customOpacity!=null?bg.customOpacity:0.84)+')';
+    photoLayer.style.backgroundImage = 'url("' + bg.customSrc.replace(/"/g,'%22') + '")';
+    scrim.style.background = 'rgba(var(--night-rgb),' + (bg.customOpacity != null ? bg.customOpacity : 0.84) + ')';
   } else {
+    /* preset: directly apply gradient via JS so re-evaluation is guaranteed */
     photoLayer.style.backgroundImage = '';
-    if(bg.presetId === 2) document.body.classList.add('bg-preset-2');
-    else if(bg.presetId === 3) document.body.classList.add('bg-preset-3');
+    scrim.style.background = '';
+    var preset = BG_PRESETS[0];
+    for(var i=0;i<BG_PRESETS.length;i++){ if(BG_PRESETS[i].id === bg.presetId){ preset = BG_PRESETS[i]; break; } }
+    document.body.style.background = isLight ? preset.lightBg : preset.darkBg;
   }
 }
 function initBackgroundCorner(){
@@ -2023,11 +2685,47 @@ function openBackgroundModal(){
   qs('#bgModalClose', host).addEventListener('click', closeModal);
 }
 
+function initContentModeToggle(){
+  var btn = document.getElementById('contentModeToggle');
+  if(!btn) return;
+  var MODES = ['novel','manga','all'];
+  /* set initial appearance immediately so there's no flash */
+  getContentMode().then(function(mode){
+    var idx = MODES.indexOf(mode); if(idx<0) idx=0;
+    applyContentModeBtn(btn, mode);
+  });
+  btn.addEventListener('click', function(){
+    getContentMode().then(function(mode){
+      var idx = MODES.indexOf(mode); if(idx<0) idx=0;
+      var next = MODES[(idx+1) % MODES.length];
+      setContentMode(next).then(function(){
+        applyContentModeBtn(btn, next);
+        /* navigate to hash that triggers the correct home view */
+        navigate('#/');
+      });
+    });
+  });
+}
+function applyContentModeBtn(btn, mode){
+  btn.className = 'content-mode-toggle mode-'+mode;
+  if(mode==='novel'){
+    btn.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/></svg>นิยาย';
+    btn.title = 'กำลังแสดง: นิยาย — กดเพื่อสลับไปมังงะ';
+  } else if(mode==='manga'){
+    btn.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="9" height="18" rx="1.5"/><rect x="13" y="3" width="9" height="18" rx="1.5"/></svg>มังงะ';
+    btn.title = 'กำลังแสดง: มังงะ — กดเพื่อสลับเป็นรวม';
+  } else {
+    btn.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>รวม';
+    btn.title = 'กำลังแสดง: รวมทั้งหมด — กดเพื่อสลับไปนิยาย';
+  }
+}
+
 function init(){
   Promise.all([getSettings(), loadCustomFontsAtStartup()]).then(function(results){
     appSettings = results[0];
     initAdultToggle();
     initThemeToggle();
+    initContentModeToggle();
     applyBackground();
     initBackgroundCorner();
     render();
