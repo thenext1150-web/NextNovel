@@ -501,13 +501,31 @@ body.adult-on .blur-badge{display:none;}
   display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;
   border:1px solid rgba(var(--tint),.14);background:rgba(var(--tint),.04);
   color:var(--text-dim);font-size:.84rem;font-weight:600;letter-spacing:.2px;
-  transition:.2s;white-space:nowrap;
+  transition:.2s;white-space:nowrap;position:relative;
 }
 .content-mode-toggle:hover{color:var(--paper);background:rgba(var(--tint),.1);}
 .content-mode-toggle .icon{width:1em;height:1em;flex-shrink:0;}
 .content-mode-toggle.mode-novel{border-color:rgba(232,128,79,.45);background:rgba(232,128,79,.12);color:var(--ember);}
 .content-mode-toggle.mode-manga{border-color:rgba(217,182,106,.45);background:rgba(217,182,106,.12);color:var(--gold);}
 .content-mode-toggle.mode-all{border-color:rgba(var(--tint),.25);background:rgba(var(--tint),.08);color:var(--paper);}
+/* dropdown picker */
+.mode-dropdown{
+  position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);
+  background:var(--night-2);border:1px solid rgba(var(--tint),.14);border-radius:var(--radius-md);
+  box-shadow:var(--shadow-pop);min-width:180px;z-index:200;overflow:hidden;
+  animation:popIn .16s cubic-bezier(.2,.9,.3,1.15) both;
+}
+.mode-dropdown-item{
+  display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;
+  font-size:.9rem;font-weight:600;color:var(--text-dim);background:none;border:none;
+  text-align:left;transition:.14s;border-bottom:1px solid rgba(var(--tint),.07);
+}
+.mode-dropdown-item:last-child{border-bottom:none;}
+.mode-dropdown-item:hover{background:rgba(var(--tint),.07);color:var(--paper);}
+.mode-dropdown-item.active{color:var(--ember);background:rgba(232,128,79,.08);}
+.mode-dropdown-item .icon{width:1.1em;height:1.1em;flex-shrink:0;}
+.mode-dropdown-item .mode-check{margin-left:auto;color:var(--ember);opacity:0;}
+.mode-dropdown-item.active .mode-check{opacity:1;}
 
 /* manga story card badge */
 .story-card-badge{
@@ -1322,21 +1340,13 @@ function render(){
   else if(route.view==='editor') p = renderEditorView(app, route.storyId, route.chapterId);
   else if(route.view==='read') p = renderReadView(app, route.storyId, route.chapterId);
   else {
-    /* home: respect contentMode setting */
-    p = getContentMode().then(function(mode){
-      if(mode === 'manga') return renderMangaHome(app);
-      if(mode === 'all')   return renderAllHome(app);
-      return renderHomeView(app);
-    });
+    /* home: use in-memory mode — no async needed, avoids stale reads */
+    if(_currentContentMode === 'manga') p = renderMangaHome(app);
+    else if(_currentContentMode === 'all') p = renderAllHome(app);
+    else p = renderHomeView(app);
   }
 
-  /* update toggle button state from stored mode */
-  var isDetailPage = (route.view==='manga-detail'||route.view==='manga-editor'||route.view==='manga-read'||
-                      route.view==='story'||route.view==='editor'||route.view==='read');
-  if(!isDetailPage){
-    var btn = document.getElementById('contentModeToggle');
-    if(btn) getContentMode().then(function(m){ applyContentModeBtn(btn, m||'novel'); });
-  }
+  /* button appearance is managed by initContentModeToggle/openModeDropdown, no update needed here */
 
   Promise.resolve(p).catch(function(err){
     console.error(err);
@@ -2685,44 +2695,90 @@ function openBackgroundModal(){
   qs('#bgModalClose', host).addEventListener('click', closeModal);
 }
 
+/* ---- Content-mode toggle ---- */
+/* Keep current mode in memory so the click handler never does an async
+   storage read — that was the source of the stale-value / stacking bug. */
+var _currentContentMode = 'novel';
+
 function initContentModeToggle(){
   var btn = document.getElementById('contentModeToggle');
   if(!btn) return;
-  var MODES = ['novel','manga','all'];
-  /* set initial appearance immediately so there's no flash */
-  getContentMode().then(function(mode){
-    var idx = MODES.indexOf(mode); if(idx<0) idx=0;
-    applyContentModeBtn(btn, mode);
-  });
-  btn.addEventListener('click', function(){
-    getContentMode().then(function(mode){
-      var idx = MODES.indexOf(mode); if(idx<0) idx=0;
-      var next = MODES[(idx+1) % MODES.length];
-      setContentMode(next).then(function(){
-        applyContentModeBtn(btn, next);
-        /* navigate to hash that triggers the correct home view */
-        navigate('#/');
-      });
-    });
+  /* _currentContentMode is already set by init() before this is called */
+  applyContentModeBtn(btn, _currentContentMode);
+  /* Single persistent listener — called only once from init(), never from render() */
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    var existing = document.getElementById('modeDropdown');
+    if(existing){ existing.remove(); return; }
+    openModeDropdown(btn);
   });
 }
+
+function openModeDropdown(btn){
+  var CHOICES = [
+    {mode:'novel', label:'นิยาย', svgPath:'<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/>'},
+    {mode:'manga', label:'มังงะ', svgPath:'<rect x="2" y="3" width="9" height="18" rx="1.5"/><rect x="13" y="3" width="9" height="18" rx="1.5"/>'},
+    {mode:'all',   label:'รวมทั้งหมด', svgPath:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'}
+  ];
+  var dd = document.createElement('div');
+  dd.id = 'modeDropdown';
+  dd.className = 'mode-dropdown';
+  dd.innerHTML = CHOICES.map(function(c){
+    var isActive = c.mode === _currentContentMode;
+    return (
+      '<button type="button" class="mode-dropdown-item'+(isActive?' active':'')+'" data-mode="'+c.mode+'">' +
+        '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+c.svgPath+'</svg>' +
+        c.label +
+        '<svg class="icon mode-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' +
+      '</button>'
+    );
+  }).join('');
+  btn.appendChild(dd);
+
+  dd.addEventListener('click', function(e){
+    var item = e.target.closest('[data-mode]');
+    if(!item) return;
+    var chosen = item.getAttribute('data-mode');
+    dd.remove();
+    if(chosen === _currentContentMode){ return; }   /* no change needed */
+    _currentContentMode = chosen;
+    setContentMode(chosen);
+    applyContentModeBtn(btn, chosen);
+    /* If we're already on the home page, re-render in place.
+       If we're on a detail page, navigate to home. */
+    var route = parseRoute();
+    var isHome = (route.view==='home'||route.view==='manga'||route.view==='all');
+    if(isHome){ render(); } else { navigate('#/'); }
+  });
+
+  /* close on outside click */
+  function onOutside(e){ if(!btn.contains(e.target)){ dd.remove(); document.removeEventListener('click', onOutside, true); } }
+  document.addEventListener('click', onOutside, true);
+  /* also close on Escape */
+  function onEsc(e){ if(e.key==='Escape'){ dd.remove(); document.removeEventListener('keydown', onEsc); } }
+  document.addEventListener('keydown', onEsc);
+}
+
 function applyContentModeBtn(btn, mode){
+  var ICONS = {
+    novel:'<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/>',
+    manga:'<rect x="2" y="3" width="9" height="18" rx="1.5"/><rect x="13" y="3" width="9" height="18" rx="1.5"/>',
+    all:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'
+  };
+  var LABELS = {novel:'นิยาย', manga:'มังงะ', all:'รวม'};
+  var TITLES = {novel:'กำลังแสดง: นิยาย', manga:'กำลังแสดง: มังงะ', all:'กำลังแสดง: รวมทั้งหมด'};
   btn.className = 'content-mode-toggle mode-'+mode;
-  if(mode==='novel'){
-    btn.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/></svg>นิยาย';
-    btn.title = 'กำลังแสดง: นิยาย — กดเพื่อสลับไปมังงะ';
-  } else if(mode==='manga'){
-    btn.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="9" height="18" rx="1.5"/><rect x="13" y="3" width="9" height="18" rx="1.5"/></svg>มังงะ';
-    btn.title = 'กำลังแสดง: มังงะ — กดเพื่อสลับเป็นรวม';
-  } else {
-    btn.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>รวม';
-    btn.title = 'กำลังแสดง: รวมทั้งหมด — กดเพื่อสลับไปนิยาย';
-  }
+  btn.title = TITLES[mode]||'';
+  btn.innerHTML =
+    '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[mode]||ICONS.novel)+'</svg>'+
+    (LABELS[mode]||'นิยาย')+
+    '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 }
 
 function init(){
-  Promise.all([getSettings(), loadCustomFontsAtStartup()]).then(function(results){
+  Promise.all([getSettings(), loadCustomFontsAtStartup(), getContentMode()]).then(function(results){
     appSettings = results[0];
+    _currentContentMode = results[2] || 'novel';   /* set before first render */
     initAdultToggle();
     initThemeToggle();
     initContentModeToggle();
