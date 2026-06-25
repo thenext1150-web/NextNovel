@@ -7,7 +7,7 @@
 nextnovel.click/
 ├── index.html
 └── assets/
-    ├── images/     (รูปภาพ 51 ไฟล์)
+    ├── images/     (รูปภาพ 0 ไฟล์)
     └── data/
         └── novels.json  (ข้อมูลทั้งหมด 1 เรื่อง)
 ```
@@ -23,4 +23,4 @@ nextnovel.click/
 > แก้ไขเนื้อหา แล้วกด GitHub Export ใหม่ จากนั้น upload ไฟล์ที่อัปเดตขึ้น GitHub อีกครั้ง
 
 ---
-_Generated: 24/6/2569 23:15:33 | 1 เรื่อง | 51 รูป_
+_Generated: 25/6/2569 22:21:52 | 1 เรื่อง | 0 รูป_
