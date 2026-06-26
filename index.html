@@ -105,16 +105,17 @@ img{max-width:100%;display:block;}
 /* ====================== NAVBAR ====================== */
 .navbar{
   position:sticky;top:0;z-index:40;height:var(--nav-h);
-  display:flex;align-items:center;gap:14px;
-  padding:0 18px;
+  display:flex;align-items:center;gap:8px;
+  padding:0 14px;
   background:var(--surface-glass);
   backdrop-filter:blur(14px) saturate(140%);
   -webkit-backdrop-filter:blur(14px) saturate(140%);
   border-bottom:1px solid rgba(var(--tint),.06);
 }
-.brand{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-size:1.18rem;font-weight:600;color:var(--paper);margin-right:auto;background:none;border:none;padding:0;cursor:pointer;text-align:left;}
-.brand .icon{width:1.5em;height:1.5em;color:var(--ember);}
-.brand small{display:block;font-family:var(--font-body);font-weight:400;font-size:.62rem;color:var(--text-dim2);letter-spacing:.4px;}
+.brand{display:flex;align-items:center;gap:9px;margin-right:auto;background:none;border:none;padding:0 4px;cursor:pointer;flex-shrink:0;}
+.brand .icon{width:1.8em;height:1.8em;color:var(--ember);}
+.brand-text{display:none;}  /* always hidden — icon-only brand */
+.brand small{display:none;}
 .nav-link{
   display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;
   font-size:.92rem;color:var(--text-dim);background:transparent;border:1px solid transparent;
@@ -122,14 +123,15 @@ img{max-width:100%;display:block;}
 }
 .nav-link:hover{color:var(--paper);background:rgba(var(--tint),.06);}
 .adult-toggle{
-  display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;
+  display:flex;align-items:center;gap:5px;padding:8px 10px;border-radius:999px;
   border:1px solid rgba(var(--tint),.14);background:rgba(var(--tint),.04);
-  color:var(--text-dim);font-size:.84rem;font-weight:600;letter-spacing:.3px;transition:.2s;
+  color:var(--text-dim);font-size:.84rem;font-weight:600;letter-spacing:.3px;transition:.2s;flex-shrink:0;
 }
-.adult-toggle .dot{width:8px;height:8px;border-radius:50%;background:var(--text-dim2);transition:.2s;}
+.adult-toggle .dot{width:8px;height:8px;border-radius:50%;background:var(--text-dim2);transition:.2s;flex-shrink:0;}
 .adult-toggle.is-on{border-color:rgba(232,128,79,.5);background:rgba(232,128,79,.14);color:var(--ember);}
 .adult-toggle.is-on .dot{background:var(--ember);box-shadow:0 0 8px var(--ember);}
 .adult-toggle:hover{filter:brightness(1.15);}
+.adult-label{font-size:.78rem;}
 .theme-toggle{
   display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;
   border:1px solid rgba(var(--tint),.14);background:rgba(var(--tint),.04);color:var(--text-dim);
@@ -146,6 +148,7 @@ body:not(.author-mode) .add-story-card,
 body:not(.author-mode) .chapter-row-actions,
 body:not(.author-mode) .fab-export,
 body:not(.author-mode) .fab-save,
+body:not(.author-mode) .author-only-btn,
 body:not(.author-mode) [data-action="new-chapter"],
 body:not(.author-mode) [data-action="new-manga-chapter"],
 body:not(.author-mode) [data-action="open-new-story"],
@@ -491,8 +494,6 @@ body.adult-on .blur-badge{display:none;}
 /* ====================== RESPONSIVE ====================== */
 @media(max-width:640px){
   .container,.container-narrow{padding:22px 14px 90px;}
-  .nav-link span.label{display:none;}
-  .brand small{display:none;}
   .story-grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:14px;}
   .story-head-cover{width:130px;}
   .reader-font-controls select{display:none;}
@@ -514,21 +515,22 @@ body.adult-on .blur-badge{display:none;}
 /* ====================== MANGA ====================== */
 /* content-mode 3-way toggle */
 .content-mode-toggle{
-  display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;
+  display:flex;align-items:center;justify-content:center;gap:2px;
+  padding:8px 10px;border-radius:999px;
   border:1px solid rgba(var(--tint),.14);background:rgba(var(--tint),.04);
-  color:var(--text-dim);font-size:.84rem;font-weight:600;letter-spacing:.2px;
-  transition:.2s;white-space:nowrap;position:relative;
+  color:var(--text-dim);font-size:.84rem;font-weight:600;
+  transition:.2s;white-space:nowrap;position:relative;flex-shrink:0;
 }
 .content-mode-toggle:hover{color:var(--paper);background:rgba(var(--tint),.1);}
-.content-mode-toggle .icon{width:1em;height:1em;flex-shrink:0;}
+.content-mode-toggle .icon{width:1.1em;height:1.1em;flex-shrink:0;}
+.content-mode-toggle .icon:last-child{width:.85em;height:.85em;opacity:.7;}
 .content-mode-toggle.mode-novel{border-color:rgba(232,128,79,.45);background:rgba(232,128,79,.12);color:var(--ember);}
 .content-mode-toggle.mode-manga{border-color:rgba(217,182,106,.45);background:rgba(217,182,106,.12);color:var(--gold);}
 .content-mode-toggle.mode-all{border-color:rgba(var(--tint),.25);background:rgba(var(--tint),.08);color:var(--paper);}
 /* dropdown picker */
 .mode-dropdown{
-  position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);
   background:var(--night-2);border:1px solid rgba(var(--tint),.14);border-radius:var(--radius-md);
-  box-shadow:var(--shadow-pop);min-width:180px;z-index:200;overflow:hidden;
+  box-shadow:var(--shadow-pop);min-width:190px;z-index:9999;overflow:hidden;
   animation:popIn .16s cubic-bezier(.2,.9,.3,1.15) both;
 }
 .mode-dropdown-item{
@@ -635,18 +637,18 @@ body.adult-on .blur-badge{display:none;}
 </button>
 
 <nav class="navbar">
-  <button class="brand" id="brandLink" type="button" title="กลับหน้าหลัก (รวมทั้งหมด)">
+  <button class="brand" id="brandLink" type="button" title="กลับหน้าหลัก">
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/></svg>
-    <span>คลังการ์ตูน<small>นิยาย & มังงะ</small></span>
+    <span class="brand-text">คลังนิยาย<small>นิยาย & มังงะ</small></span>
   </button>
   <button id="contentModeToggle" class="content-mode-toggle" type="button" aria-label="สลับมุมมองเนื้อหา"></button>
-  <button id="githubExportBtn" class="theme-toggle" type="button" title="ส่งออกไฟล์ GitHub" aria-label="ส่งออกไฟล์ GitHub">
+  <button id="githubExportBtn" class="theme-toggle author-only-btn" type="button" title="ส่งออกไฟล์ GitHub" aria-label="ส่งออกไฟล์ GitHub">
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77A5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77 5.44 5.44 0 0 0 3.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
   </button>
   <button id="authToggle" class="theme-toggle" type="button" title="เข้าสู่โหมดผู้เขียน" aria-label="สลับโหมดผู้อ่าน/ผู้เขียน"></button>
   <button id="themeToggle" class="theme-toggle" type="button" aria-label="สลับโหมดสว่าง/มืด" title="สลับโหมดสว่าง/มืด"></button>
   <button id="adultToggle" class="adult-toggle" type="button" aria-pressed="false">
-    <span class="dot"></span><span id="adultToggleLabel">18+ ปิด</span>
+    <span class="dot"></span><span id="adultToggleLabel" class="adult-label">18+</span>
   </button>
 </nav>
 
@@ -2010,7 +2012,7 @@ function renderHomeView(app){
     app.innerHTML =
       '<div class="container">' +
         '<div class="page-head">' +
-          '<div><h1>รวมเรื่องทั้งหมด</h1><p>เรื่องราวทั้งหมดของคุณจะปรากฏที่นี่หลังบันทึก</p></div>' +
+          '<div><h1>คลังนิยาย</h1><p>นิยายทั้งหมดของคุณจะปรากฏที่นี่หลังบันทึก</p></div>' +
         '</div>' +
         '<div class="story-grid">' +
           '<button class="add-story-card" type="button" data-action="open-new-story">' +
@@ -2866,7 +2868,8 @@ function initAdultToggle(){
   function applyState(){
     btn.classList.toggle('is-on', !!appSettings.adult);
     btn.setAttribute('aria-pressed', appSettings.adult ? 'true':'false');
-    label.textContent = appSettings.adult ? '18+ เปิด' : '18+ ปิด';
+    btn.title = appSettings.adult ? '18+ เปิดอยู่ — กดเพื่อปิด' : '18+ ปิดอยู่ — กดเพื่อเปิด';
+    label.textContent = '18+';
     document.body.classList.toggle('adult-on', !!appSettings.adult);
   }
   applyState();
@@ -3039,13 +3042,14 @@ function initContentModeToggle(){
 
 function openModeDropdown(btn){
   var CHOICES = [
-    {mode:'novel', label:'นิยาย', svgPath:'<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/>'},
-    {mode:'manga', label:'มังงะ', svgPath:'<rect x="2" y="3" width="9" height="18" rx="1.5"/><rect x="13" y="3" width="9" height="18" rx="1.5"/>'},
+    {mode:'novel', label:'คลังนิยาย', svgPath:'<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/>'},
+    {mode:'manga', label:'คลังมังงะ', svgPath:'<rect x="2" y="3" width="9" height="18" rx="1.5"/><rect x="13" y="3" width="9" height="18" rx="1.5"/>'},
     {mode:'all',   label:'รวมทั้งหมด', svgPath:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'}
   ];
   var dd = document.createElement('div');
   dd.id = 'modeDropdown';
   dd.className = 'mode-dropdown';
+  dd.style.cssText = 'position:fixed;z-index:9999;';
   dd.innerHTML = CHOICES.map(function(c){
     var isActive = c.mode === _currentContentMode;
     return (
@@ -3056,45 +3060,67 @@ function openModeDropdown(btn){
       '</button>'
     );
   }).join('');
-  btn.appendChild(dd);
+
+  /* Append to body — never clipped by overflow:hidden on navbar */
+  document.body.appendChild(dd);
+
+  /* Position below the button */
+  var r = btn.getBoundingClientRect();
+  var ddW = 190;
+  var left = Math.min(r.left, window.innerWidth - ddW - 6);
+  left = Math.max(6, left);
+  dd.style.top  = (r.bottom + 6) + 'px';
+  dd.style.left = left + 'px';
 
   dd.addEventListener('click', function(e){
     var item = e.target.closest('[data-mode]');
     if(!item) return;
     var chosen = item.getAttribute('data-mode');
     dd.remove();
-    if(chosen === _currentContentMode){ return; }   /* no change needed */
+    document.removeEventListener('click', onOutside, true);
+    document.removeEventListener('keydown', onEsc);
+    if(chosen === _currentContentMode){ return; }
     _currentContentMode = chosen;
     setContentMode(chosen);
     applyContentModeBtn(btn, chosen);
-    /* If we're already on the home page, re-render in place.
-       If we're on a detail page, navigate to home. */
     var route = parseRoute();
     var isHome = (route.view==='home'||route.view==='manga'||route.view==='all');
     if(isHome){ render(); } else { navigate('#/'); }
   });
 
-  /* close on outside click */
-  function onOutside(e){ if(!btn.contains(e.target)){ dd.remove(); document.removeEventListener('click', onOutside, true); } }
-  document.addEventListener('click', onOutside, true);
-  /* also close on Escape */
-  function onEsc(e){ if(e.key==='Escape'){ dd.remove(); document.removeEventListener('keydown', onEsc); } }
-  document.addEventListener('keydown', onEsc);
+  function onOutside(e){
+    if(!btn.contains(e.target) && !dd.contains(e.target)){
+      dd.remove();
+      document.removeEventListener('click', onOutside, true);
+      document.removeEventListener('keydown', onEsc);
+    }
+  }
+  function onEsc(e){
+    if(e.key==='Escape'){
+      dd.remove();
+      document.removeEventListener('click', onOutside, true);
+      document.removeEventListener('keydown', onEsc);
+    }
+  }
+  /* Delay so the same click that opened the dropdown doesn't instantly close it */
+  setTimeout(function(){
+    document.addEventListener('click', onOutside, true);
+    document.addEventListener('keydown', onEsc);
+  }, 20);
 }
-
 function applyContentModeBtn(btn, mode){
   var ICONS = {
     novel:'<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/>',
     manga:'<rect x="2" y="3" width="9" height="18" rx="1.5"/><rect x="13" y="3" width="9" height="18" rx="1.5"/>',
     all:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'
   };
-  var LABELS = {novel:'นิยาย', manga:'มังงะ', all:'รวม'};
-  var TITLES = {novel:'กำลังแสดง: นิยาย', manga:'กำลังแสดง: มังงะ', all:'กำลังแสดง: รวมทั้งหมด'};
+  var TITLES = {novel:'กำลังแสดง: คลังนิยาย', manga:'กำลังแสดง: คลังมังงะ', all:'กำลังแสดง: รวมทั้งหมด'};
   btn.className = 'content-mode-toggle mode-'+mode;
   btn.title = TITLES[mode]||'';
+  btn.setAttribute('aria-label', TITLES[mode]||'');
+  /* icon-only: no text label, just the mode icon + chevron */
   btn.innerHTML =
     '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[mode]||ICONS.novel)+'</svg>'+
-    (LABELS[mode]||'นิยาย')+
     '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 }
 
