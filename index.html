@@ -1006,11 +1006,18 @@ function runExportToGitHub(){
     toast('กำลังรวบรวมข้อมูลทั้งหมด...');
     return getStories().then(function(stories){
       var zip = new JSZip();
-      var imgMap = {};   /* base64 dataURL → filename */
+      var imgMap = {};      /* base64 dataURL → filename in assets/images/ */
       var imgCounter = 0;
+      var urlImgCount = 0; /* images stored as external URLs — kept as-is, not fetched */
 
       function extractImg(src){
-        if(!src || src.indexOf('data:') !== 0) return src || '';  /* keep ext URLs or empty */
+        if(!src) return '';
+        /* External URL (http/https/relative) → keep the link, no fetch, no download */
+        if(src.indexOf('data:') !== 0){
+          if(src.length > 1) urlImgCount++;
+          return src;
+        }
+        /* Base64 data URL → extract to assets/images/ file inside the zip */
         if(imgMap[src]) return './assets/images/' + imgMap[src];
         var m = src.match(/^data:([^;]+);/);
         var mime = m ? m[1] : 'image/jpeg';
@@ -1148,7 +1155,11 @@ function runExportToGitHub(){
     a.href = url; a.download = 'nextnovel-github.zip'; a.style.display='none';
     document.body.appendChild(a); a.click();
     setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 3000);
-    toast('✓ ดาวน์โหลด nextnovel-github.zip — แตกไฟล์แล้ว upload ขึ้น GitHub ได้เลย');
+    var parts = ['✓ ดาวน์โหลด nextnovel-github.zip'];
+    if(imgCounter > 0) parts.push('รูป '+imgCounter+' ไฟล์ → assets/images/');
+    if(urlImgCount > 0) parts.push('รูป URL '+urlImgCount+' รายการ → เก็บเป็นลิงก์');
+    parts.push('upload ขึ้น GitHub ได้เลย');
+    toast(parts.join(' · '));
   }).catch(function(err){
     console.error('export error', err);
     toast('เกิดข้อผิดพลาดในการส่งออก: '+err.message, true);
