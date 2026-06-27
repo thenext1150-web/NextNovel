@@ -1423,13 +1423,25 @@ function pickImageModal(opts){
         var f = qs('#pickFileInput', host).files[0];
         if(!f){ toast('กรุณาเลือกไฟล์รูปภาพ', true); return; }
         var confirmBtn = qs('#pickConfirm', host);
-        confirmBtn.disabled = true; confirmBtn.textContent = 'กำลังประมวลผล...';
-        compressImage(f).then(function(dataUrl){
-          proceed(dataUrl);
-        }).catch(function(){
-          toast('ไม่สามารถอ่านไฟล์รูปภาพนี้ได้', true);
-          confirmBtn.disabled = false; confirmBtn.innerHTML = icon('check')+' '+(ratio?'ถัดไป':'เพิ่มรูปภาพ');
-        });
+        confirmBtn.disabled = true; confirmBtn.textContent = 'กำลังอ่านไฟล์...';
+        if(ratio){
+          /* Cover image (story/chapter) → compress to keep thumbnails small */
+          compressImage(f).then(function(dataUrl){
+            proceed(dataUrl);
+          }).catch(function(){
+            toast('ไม่สามารถอ่านไฟล์รูปภาพนี้ได้', true);
+            confirmBtn.disabled = false; confirmBtn.innerHTML = icon('check')+' ถัดไป';
+          });
+        } else {
+          /* Content-block image → read at original resolution, no re-encoding */
+          var reader = new FileReader();
+          reader.onload = function(e){ proceed(e.target.result); };
+          reader.onerror = function(){
+            toast('ไม่สามารถอ่านไฟล์รูปภาพนี้ได้', true);
+            confirmBtn.disabled = false; confirmBtn.innerHTML = icon('check')+' เพิ่มรูปภาพ';
+          };
+          reader.readAsDataURL(f);
+        }
       }
     });
   });
@@ -1628,7 +1640,7 @@ function renderMangaHome(app){
     app.innerHTML =
       '<div class="container">' +
         '<div class="page-head">' +
-          '<div><h1>คลังมังงะ</h1><p>มังงะทั้งหมดของคุณจะปรากฏที่นี่</p></div>' +
+          '<div><h1>มังงะ</h1></div>' +
         '</div>' +
         '<div class="story-grid">' +
           '<button class="add-story-card" type="button" data-action="open-new-manga">'+icon('plus')+'<span>เพิ่มมังงะใหม่</span></button>' +
@@ -2012,7 +2024,7 @@ function renderHomeView(app){
     app.innerHTML =
       '<div class="container">' +
         '<div class="page-head">' +
-          '<div><h1>คลังนิยาย</h1><p>นิยายทั้งหมดของคุณจะปรากฏที่นี่หลังบันทึก</p></div>' +
+          '<div><h1>นิยาย</h1></div>' +
         '</div>' +
         '<div class="story-grid">' +
           '<button class="add-story-card" type="button" data-action="open-new-story">' +
@@ -2076,7 +2088,7 @@ function renderAllHome(app){
 
     app.innerHTML =
       '<div class="container">'+
-        '<div class="page-head"><div><h1>ทั้งหมด</h1><p>นิยายและมังงะทั้งหมดของคุณ</p></div></div>'+
+        '<div class="page-head"><div><h1>ทั้งหมด</h1></div></div>'+
         '<h2 style="font-size:1rem;color:var(--text-dim);margin-bottom:14px;font-weight:600;">'+icon('book')+' นิยาย</h2>'+
         '<div class="story-grid" style="margin-bottom:36px;">'+
           '<button class="add-story-card" type="button" data-action="open-new-story">'+icon('plus')+'<span>เพิ่มนิยาย</span></button>'+
@@ -3042,9 +3054,9 @@ function initContentModeToggle(){
 
 function openModeDropdown(btn){
   var CHOICES = [
-    {mode:'novel', label:'คลังนิยาย', svgPath:'<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/>'},
-    {mode:'manga', label:'คลังมังงะ', svgPath:'<rect x="2" y="3" width="9" height="18" rx="1.5"/><rect x="13" y="3" width="9" height="18" rx="1.5"/>'},
-    {mode:'all',   label:'รวมทั้งหมด', svgPath:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'}
+    {mode:'novel', label:'นิยาย', svgPath:'<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 4.5V19"/>'},
+    {mode:'manga', label:'มังงะ', svgPath:'<rect x="2" y="3" width="9" height="18" rx="1.5"/><rect x="13" y="3" width="9" height="18" rx="1.5"/>'},
+    {mode:'all',   label:'ทั้งหมด', svgPath:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'}
   ];
   var dd = document.createElement('div');
   dd.id = 'modeDropdown';
@@ -3114,7 +3126,7 @@ function applyContentModeBtn(btn, mode){
     manga:'<rect x="2" y="3" width="9" height="18" rx="1.5"/><rect x="13" y="3" width="9" height="18" rx="1.5"/>',
     all:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'
   };
-  var TITLES = {novel:'กำลังแสดง: คลังนิยาย', manga:'กำลังแสดง: คลังมังงะ', all:'กำลังแสดง: รวมทั้งหมด'};
+  var TITLES = {novel:'กำลังแสดง: นิยาย', manga:'กำลังแสดง: มังงะ', all:'กำลังแสดง: ทั้งหมด'};
   btn.className = 'content-mode-toggle mode-'+mode;
   btn.title = TITLES[mode]||'';
   btn.setAttribute('aria-label', TITLES[mode]||'');
