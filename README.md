@@ -7,9 +7,9 @@
 nextnovel.click/
 ├── index.html
 └── assets/
-    ├── images/     (รูปภาพ 10 ไฟล์)
+    ├── images/     (รูปภาพ 8 ไฟล์)
     └── data/
-        └── novels.json  (ข้อมูลทั้งหมด 1 เรื่อง)
+        └── novels.json  (ข้อมูลทั้งหมด 2 เรื่อง)
 ```
 
 ## วิธี Deploy บน GitHub Pages
@@ -23,4 +23,4 @@ nextnovel.click/
 > แก้ไขเนื้อหา แล้วกด GitHub Export ใหม่ จากนั้น upload ไฟล์ที่อัปเดตขึ้น GitHub อีกครั้ง
 
 ---
-_Generated: 27/6/2569 22:37:20 | 1 เรื่อง | 10 รูป_
+_Generated: 30/6/2569 22:06:16 | 2 เรื่อง | 8 รูป_
