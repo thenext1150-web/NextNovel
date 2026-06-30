@@ -900,9 +900,31 @@ function deleteChapterContent(storyId, chapterId){ return storageDelete(chapterK
 function getSettings(){ return storageGet('settings', {adult:false, theme:'dark', fontSize:20, fontFamily:FONT_OPTIONS[0].value, background:{mode:'preset', presetId:1, customSrc:'', customOpacity:0.84}}); }
 function saveSettingsData(s){ return storageSet('settings', s); }
 function getReadingProgress(){ return storageGet('readingProgress', {}); }
-function markChapterRead(storyId, chapterId){
+/* progress map shape: { [storyId]: { chapterId, scrollRatio, updatedAt } }
+   scrollRatio is 0..1, the fraction scrolled down the chapter — resolution
+   independent so it survives font-size/zoom changes between sessions. */
+function recordChapterOpen(storyId, chapterId){
+  /* Called when a chapter view is opened. If it's a different chapter than
+     what's on record, reset scrollRatio to 0 (fresh chapter = start at top).
+     If it's the SAME chapter as on record, leave scrollRatio untouched so
+     the reader can restore to where they last scrolled. */
+  return getReadingProgress().then(function(map){
+    var existing = map[storyId];
+    if(!existing || existing.chapterId !== chapterId){
+      map[storyId] = {chapterId: chapterId, scrollRatio: 0, updatedAt: Date.now()};
+      storageSet('readingProgress', map);
+      return 0;
+    }
+    return existing.scrollRatio || 0;
+  });
+}
+function saveScrollProgress(storyId, chapterId, ratio){
   getReadingProgress().then(function(map){
-    map[storyId] = chapterId;
+    /* Only write if the user hasn't already navigated to a different
+       chapter in the meantime (avoids a late throttled save clobbering
+       progress for a chapter the reader has since left). */
+    if(map[storyId] && map[storyId].chapterId !== chapterId) return;
+    map[storyId] = {chapterId: chapterId, scrollRatio: ratio, updatedAt: Date.now()};
     storageSet('readingProgress', map);
   });
 }
@@ -1668,7 +1690,7 @@ function renderMangaDetail(app, storyId){
     var story = findStory(stories, storyId);
     if(!story){ app.innerHTML='<div class="container"><div class="empty-state"><h3>ไม่พบมังงะนี้</h3><a class="btn btn-primary" href="#/manga">กลับ</a></div></div>'; return; }
     var chapters = story.chapters||[];
-    var resumeId = progress[story.id];
+    var resumeId = progress[story.id] && progress[story.id].chapterId;
     var resumeExists = resumeId && chapters.some(function(c){ return c.id===resumeId; });
     var coverHtml = coverImgHtml(story.cover, story.coverCrop, 'image');
     var rows = chapters.map(function(ch, idx){
@@ -1903,7 +1925,7 @@ function renderMangaReader(app, storyId, chapterId){
         app.innerHTML='<div class="container"><div class="empty-state"><h3>ตอนนี้ยังไม่มีหน้ามังงะ</h3><a class="btn btn-primary" href="#/manga-editor/'+story.id+'/'+chapterId+'">เพิ่มหน้ามังงะ</a></div></div>';
         return;
       }
-      markChapterRead(story.id, ch.id);
+      recordChapterOpen(story.id, ch.id);
       var pages = ch.pages;
       var curPage = 0;
       var modeIcon = readMode==='single' ? icon('chevDown') : icon('chevRight');
@@ -2205,7 +2227,7 @@ function renderStoryView(app, storyId){
     }
     var coverHtml = coverImgHtml(story.cover, story.coverCrop, 'book');
     var chapters = story.chapters || [];
-    var resumeChapterId = progress[story.id];
+    var resumeChapterId = progress[story.id] && progress[story.id].chapterId;
     var resumeExists = resumeChapterId && chapters.some(function(c){ return c.id===resumeChapterId; });
 
     var previewMap = {};
@@ -2635,14 +2657,15 @@ function renderReadView(app, storyId, chapterId){
             '</footer>' +
           '</div>';
 
-        markChapterRead(story.id, ch.id);
-        wireReaderEvents(story, prevCh, nextCh);
+        return recordChapterOpen(story.id, ch.id).then(function(savedScrollRatio){
+          wireReaderEvents(story, ch, prevCh, nextCh, savedScrollRatio);
+        });
       });
     });
   });
 }
 
-function wireReaderEvents(story, prevCh, nextCh){
+function wireReaderEvents(story, ch, prevCh, nextCh, savedScrollRatio){
   var root = document.getElementById('readerRoot');
   var content = document.getElementById('readerContent');
 
@@ -2659,6 +2682,36 @@ function wireReaderEvents(story, prevCh, nextCh){
   }
   window.addEventListener('scroll', onScroll, {passive:true});
   content.addEventListener('click', onContentTap);
+
+  /* ---- Restore scroll position to where the reader last left off ---- */
+  if(savedScrollRatio > 0){
+    /* Wait for images to load (they affect document height) before
+       computing the target scroll position, otherwise we'd land short. */
+    var restoreAttempts = 0;
+    function restoreScroll(){
+      restoreAttempts++;
+      var scrollable = document.body.scrollHeight - window.innerHeight;
+      if(scrollable > 0){
+        window.scrollTo({top: scrollable * savedScrollRatio, behavior:'auto'});
+      }
+      /* Re-check shortly after in case images were still loading and the
+         page grew taller, so the position lands accurately. Cap retries. */
+      if(restoreAttempts < 3) setTimeout(restoreScroll, 220);
+    }
+    requestAnimationFrame(function(){ requestAnimationFrame(restoreScroll); });
+  }
+
+  /* ---- Continuously save scroll progress as the reader scrolls ---- */
+  var scrollSaveTimer = null;
+  function onScrollSaveProgress(){
+    clearTimeout(scrollSaveTimer);
+    scrollSaveTimer = setTimeout(function(){
+      var scrollable = document.body.scrollHeight - window.innerHeight;
+      var ratio = scrollable > 0 ? Math.min(1, Math.max(0, window.scrollY / scrollable)) : 0;
+      saveScrollProgress(story.id, ch.id, ratio);
+    }, 500);
+  }
+  window.addEventListener('scroll', onScrollSaveProgress, {passive:true});
 
   qs('#fontDec').addEventListener('click', function(){
     appSettings.fontSize = Math.max(14, appSettings.fontSize - 2);
@@ -2689,7 +2742,9 @@ function wireReaderEvents(story, prevCh, nextCh){
   }
 
   currentCleanup = function(){
+    clearTimeout(scrollSaveTimer);
     window.removeEventListener('scroll', onScroll);
+    window.removeEventListener('scroll', onScrollSaveProgress);
   };
 }
 
