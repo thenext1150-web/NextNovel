@@ -1029,24 +1029,46 @@ function runExportToGitHub(){
     return getStories().then(function(stories){
       var zip = new JSZip();
       var imgMap = {};      /* base64 dataURL → filename in assets/images/ */
+      var usedNames = {};   /* track used filenames to avoid collisions */
       var imgCounter = 0;
       var urlImgCount = 0; /* images stored as external URLs — kept as-is, not fetched */
 
-      function extractImg(src){
+      function extractImg(src, originalName){
         if(!src) return '';
-        /* External URL (http/https/relative) → keep the link, no fetch, no download */
+        /* External URL → keep as link, no fetch */
         if(src.indexOf('data:') !== 0){
           if(src.length > 1) urlImgCount++;
           return src;
         }
-        /* Base64 data URL → extract to assets/images/ file inside the zip */
+        /* Already extracted → reuse */
         if(imgMap[src]) return './assets/images/' + imgMap[src];
-        var m = src.match(/^data:([^;]+);/);
-        var mime = m ? m[1] : 'image/jpeg';
-        var extLookup = {'image/jpeg':'jpg','image/png':'png','image/gif':'gif','image/webp':'webp'};
-        var ext = extLookup[mime] || 'jpg';
-        imgCounter++;
-        var filename = 'img_' + ('000'+imgCounter).slice(-4) + '.' + ext;
+        /* Determine filename */
+        var filename;
+        if(originalName && originalName.trim()){
+          /* Sanitize: remove characters unsafe in filesystem/URLs */
+          var safe = originalName.trim().replace(/[\/\\:*?"<>|\x00-\x1f]/g, '_');
+          if(!safe) safe = 'image';
+          /* Ensure extension: if the mime doesn't match extension, we trust the original name */
+          filename = safe;
+          /* Handle duplicate names: append _2, _3 etc. before the extension */
+          if(usedNames[safe] !== undefined){
+            var dot = safe.lastIndexOf('.');
+            var base2 = dot >= 0 ? safe.slice(0, dot) : safe;
+            var ext2  = dot >= 0 ? safe.slice(dot) : '';
+            usedNames[safe]++;
+            filename = base2 + '_' + usedNames[safe] + ext2;
+          } else {
+            usedNames[safe] = 0;
+          }
+        } else {
+          /* No stored name (old data) → fall back to auto-numbered */
+          var m = src.match(/^data:([^;]+);/);
+          var mime = m ? m[1] : 'image/jpeg';
+          var extLookup = {'image/jpeg':'jpg','image/png':'png','image/gif':'gif','image/webp':'webp'};
+          var ext = extLookup[mime] || 'jpg';
+          imgCounter++;
+          filename = 'img_' + ('000'+imgCounter).slice(-4) + '.' + ext;
+        }
         imgMap[src] = filename;
         var b64 = src.split(',')[1] || '';
         zip.file('assets/images/'+filename, b64, {base64:true});
@@ -1063,28 +1085,28 @@ function runExportToGitHub(){
       stories.forEach(function(story){
         seq = seq.then(function(){
           var s = cloneKeys(story, ['chapters']);
-          s.cover = extractImg(story.cover);
+          s.cover = extractImg(story.cover, story.coverSrcName||'');
           var chapSeq = Promise.resolve([]);
           (story.chapters||[]).forEach(function(ch){
             chapSeq = chapSeq.then(function(arr){
               var c = cloneKeys(ch, ['fullContent']);
-              c.cover    = extractImg(ch.cover);
-              c.previewImage = extractImg(ch.previewImage);
+              c.cover        = extractImg(ch.cover, ch.coverSrcName||'');
+              c.previewImage = extractImg(ch.previewImage, ch.previewImageName||'');
               var contentP = (story.type === 'manga')
                 ? getMangaChapter(story.id, ch.id)
                 : getChapterContent(story.id, ch.id);
               return contentP.then(function(full){
                 if(full){
                   var f = cloneKeys(full);
-                  f.cover = extractImg(full.cover);
+                  f.cover = extractImg(full.cover, full.coverSrcName||'');
                   if(story.type==='manga'){
                     f.pages = (full.pages||[]).map(function(p){
-                      var np = cloneKeys(p); np.src = extractImg(p.src); return np;
+                      var np = cloneKeys(p); np.src = extractImg(p.src, p.name||''); return np;
                     });
                   } else {
                     f.content = (full.content||[]).map(function(b){
                       if(b.type!=='image') return b;
-                      var nb = cloneKeys(b); nb.src = extractImg(b.src); return nb;
+                      var nb = cloneKeys(b); nb.src = extractImg(b.src, b.name||''); return nb;
                     });
                   }
                   c.fullContent = f;
@@ -1438,12 +1460,15 @@ function pickImageModal(opts){
       });
     });
     qs('#pickCancel', host).addEventListener('click', function(){ closeModal(); resolve(null); });
-    function proceed(src){
+    function proceed(src, originalName){
       closeModal();
       if(ratio){
-        openCropperModal(src, ratio).then(resolve);
+        openCropperModal(src, ratio).then(function(result){
+          if(!result) resolve(null);
+          else resolve({src: result.src, name: originalName || '', crop: result.crop});
+        });
       } else {
-        resolve(src);
+        resolve({src: src, name: originalName || ''});
       }
     }
     qs('#pickConfirm', host).addEventListener('click', function(){
@@ -1451,24 +1476,26 @@ function pickImageModal(opts){
       if(activeTab === 'link'){
         var url = qs('#pickLinkInput', host).value.trim();
         if(!url){ toast('กรุณาวางลิงก์รูปภาพ', true); return; }
-        proceed(url);
+        /* Derive a name from the URL's path — strip query/hash */
+        var urlName = (url.split('?')[0].split('/').pop() || '').replace(/[^a-zA-Z0-9._-]/g,'_') || '';
+        proceed(url, urlName);
       } else {
         var f = qs('#pickFileInput', host).files[0];
         if(!f){ toast('กรุณาเลือกไฟล์รูปภาพ', true); return; }
         var confirmBtn = qs('#pickConfirm', host);
         confirmBtn.disabled = true; confirmBtn.textContent = 'กำลังอ่านไฟล์...';
         if(ratio){
-          /* Cover image (story/chapter) → compress to keep thumbnails small */
+          /* Cover image → compress */
           compressImage(f).then(function(dataUrl){
-            proceed(dataUrl);
+            proceed(dataUrl, f.name);
           }).catch(function(){
             toast('ไม่สามารถอ่านไฟล์รูปภาพนี้ได้', true);
             confirmBtn.disabled = false; confirmBtn.innerHTML = icon('check')+' ถัดไป';
           });
         } else {
-          /* Content-block image → read at original resolution, no re-encoding */
+          /* Content-block image → read at original resolution */
           var reader = new FileReader();
-          reader.onload = function(e){ proceed(e.target.result); };
+          reader.onload = function(e){ proceed(e.target.result, f.name); };
           reader.onerror = function(){
             toast('ไม่สามารถอ่านไฟล์รูปภาพนี้ได้', true);
             confirmBtn.disabled = false; confirmBtn.innerHTML = icon('check')+' เพิ่มรูปภาพ';
@@ -2167,6 +2194,7 @@ function openStoryModal(existing, isManga){
       if(!result) return;
       draftStory.cover = result.src;
       draftStory.coverCrop = result.crop;
+      draftStory.coverSrcName = result.name || '';
       qs('#storyCoverPreview', host).innerHTML = coverImgHtml(draftStory.cover, draftStory.coverCrop, 'book');
     });
   });
@@ -2192,6 +2220,7 @@ function openStoryModal(existing, isManga){
           stories[existingIdx].description = desc;
           stories[existingIdx].cover = draftStory.cover;
           stories[existingIdx].coverCrop = draftStory.coverCrop;
+          stories[existingIdx].coverSrcName = draftStory.coverSrcName || '';
           stories[existingIdx].updatedAt = now;
         }
       } else {
@@ -2450,9 +2479,9 @@ function wireEditorEvents(story){
     var insertImgBtn = e.target.closest('[data-action="insert-image"]');
     if(insertImgBtn){
       var idx2 = parseInt(insertImgBtn.getAttribute('data-index'), 10);
-      pickImageModal().then(function(src){
-        if(!src) return;
-        draftChapter.content.splice(idx2, 0, {id:genId(), type:'image', src:src, width:60});
+      pickImageModal().then(function(r){
+        if(!r) return;
+        draftChapter.content.splice(idx2, 0, {id:genId(), type:'image', src:r.src, name:r.name||'', width:60});
         renderBlocksContainer();
         markDirty();
       });
@@ -2463,9 +2492,9 @@ function wireEditorEvents(story){
       var afterId = insertAfterBtn.getAttribute('data-block-id');
       var afterIdx = draftChapter.content.findIndex(function(x){ return x.id===afterId; });
       if(afterIdx === -1) afterIdx = draftChapter.content.length - 1;
-      pickImageModal().then(function(src){
-        if(!src) return;
-        draftChapter.content.splice(afterIdx + 1, 0, {id:genId(), type:'image', src:src, width:60});
+      pickImageModal().then(function(r){
+        if(!r) return;
+        draftChapter.content.splice(afterIdx + 1, 0, {id:genId(), type:'image', src:r.src, name:r.name||'', width:60});
         renderBlocksContainer();
         markDirty();
       });
@@ -2519,6 +2548,7 @@ function wireEditorEvents(story){
       if(!result) return;
       draftChapter.cover = result.src;
       draftChapter.coverCrop = result.crop;
+      draftChapter.coverSrcName = result.name || '';
       qs('#chapterCoverPreview').innerHTML = coverImgHtml(draftChapter.cover, draftChapter.coverCrop);
       markDirty();
     });
@@ -2575,11 +2605,12 @@ function saveDraftChapter(story){
         meta.title = draftChapter.title;
         meta.cover = draftChapter.cover;
         meta.coverCrop = draftChapter.coverCrop;
+        meta.coverSrcName = draftChapter.coverSrcName || '';
         meta.previewImage = preview;
         meta.wordCount = words;
         meta.updatedAt = now;
       } else {
-        s.chapters.push({id:draftChapter.id, title:draftChapter.title, cover:draftChapter.cover, coverCrop:draftChapter.coverCrop, previewImage:preview, wordCount:words, createdAt:now, updatedAt:now});
+        s.chapters.push({id:draftChapter.id, title:draftChapter.title, cover:draftChapter.cover, coverCrop:draftChapter.coverCrop, coverSrcName:draftChapter.coverSrcName||'', previewImage:preview, wordCount:words, createdAt:now, updatedAt:now});
       }
       s.updatedAt = now;
       return saveStories(stories);
@@ -3075,12 +3106,12 @@ function openBackgroundModal(){
     });
   });
   qs('#bgCustomPick', host).addEventListener('click', function(){
-    pickImageModal().then(function(src){
-      if(!src) return;
+    pickImageModal().then(function(r){
+      if(!r) return;
       var prevOpacity = getBackgroundSettings().customOpacity;
-      appSettings.background = {mode:'custom', presetId:getBackgroundSettings().presetId, customSrc:src, customOpacity:(prevOpacity!=null?prevOpacity:0.84)};
+      appSettings.background = {mode:'custom', presetId:getBackgroundSettings().presetId, customSrc:r.src, customOpacity:(prevOpacity!=null?prevOpacity:0.84)};
       persist();
-      qs('#bgCustomPreview', host).innerHTML = '<img src="'+escapeAttr(src)+'" alt="" style="width:100%;height:100%;object-fit:cover;">';
+      qs('#bgCustomPreview', host).innerHTML = '<img src="'+escapeAttr(r.src)+'" alt="" style="width:100%;height:100%;object-fit:cover;">';
     });
   });
   qs('#bgCustomRemove', host).addEventListener('click', function(){
